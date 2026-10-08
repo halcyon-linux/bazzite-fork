@@ -1,0 +1,94 @@
+#!/usr/bin/bash
+
+IMAGE_INFO="/usr/share/ublue-os/image-info.json"
+IMAGE_NAME=$(jq -r '."image-name"' < $IMAGE_INFO)
+IMAGE_BRANCH=$(jq -r '."image-branch"' < $IMAGE_INFO)
+FEDORA_VERSION=$(jq -r '."fedora-version"' < $IMAGE_INFO)
+
+# SCRIPT VERSION
+HWS_VER=79
+HWS_VER_FILE="/etc/bazzite/hws_version"
+HWS_VER_RAN=$(cat $HWS_VER_FILE)
+
+# IMAGE IDENTIFIERS
+KNOWN_IMAGE_NAME_FILE="/etc/bazzite/image_name"
+KNOWN_IMAGE_NAME=$(cat $KNOWN_IMAGE_NAME_FILE)
+KNOWN_IMAGE_BRANCH_FILE="/etc/bazzite/image_branch"
+KNOWN_IMAGE_BRANCH=$(cat $KNOWN_IMAGE_BRANCH_FILE)
+KNOWN_FEDORA_VERSION_FILE="/etc/bazzite/fedora_version"
+KNOWN_FEDORA_VERSION=$(cat $KNOWN_FEDORA_VERSION_FILE)
+
+if [[ "$KNOWN_IMAGE_NAME" == "$IMAGE_NAME" && \
+    "$KNOWN_IMAGE_BRANCH" == "$IMAGE_BRANCH" && \
+    "$KNOWN_FEDORA_VERSION" == "$FEDORA_VERSION" && \
+    "$HWS_VER_RAN" == "$HWS_VER" ]]; then
+  echo "Hardware setup already ran for version $HWS_VER_RAN, skipping"
+  exit 0
+fi
+
+# GLOBAL
+MINIMUM_FREE_ZRAM=$(awk '/MemTotal/ {printf "%.0f", $2 * 0.01}' /proc/meminfo)
+CURRENT_FREE_ZRAM=$(sysctl vm.min_free_kbytes | awk '{print $3}')
+KARGS=$(rpm-ostree kargs)
+NEEDED_KARGS=()
+
+# KERNEL ARGUMENTS
+echo "Current kargs: $KARGS"
+
+if [[ ! $KARGS =~ "disable_ertm" ]]; then
+  echo "Adding needed kargs for bluetooth"
+  NEEDED_KARGS+=("--append-if-missing=bluetooth.disable_ertm=1")
+fi
+
+if [[ $KARGS =~ "nomodeset" ]]; then
+  echo "Removing nomodeset"
+  NEEDED_KARGS+=("--delete-if-present=nomodeset")
+fi
+
+# ZRAM MINIMUM-FREE CONFIGURATION
+echo "Current minimum-free ZRAM value: $CURRENT_FREE_ZRAM"
+
+if ((MINIMUM_FREE_ZRAM > CURRENT_FREE_ZRAM)); then
+    sysctl -w "vm.min_free_kbytes=${MINIMUM_FREE_ZRAM}"
+    echo "Found needed minimum-free ZRAM changes, applying the following: ${MINIMUM_FREE_ZRAM}"
+else
+  echo "No minimum-free ZRAM changes needed"
+fi
+
+# WAYDROID FIX
+if [[ -f "/var/lib/waydroid/lxc/waydroid/config" ]]; then
+  echo "Removing unneeded apparmor entry from Waydroid LXC"
+  sed -i '/lxc\.apparmor\.profile\s*=\s*unconfined/d' "/var/lib/waydroid/lxc/waydroid/config"
+fi
+
+# HOSTNAME FIX
+# If the hostname is too long Distrobox will fail during setup
+# Let's check the length and reset it to something sensible if that happens.
+if (( $(hostname | wc -m) > 20 )); then
+  hostnamectl set-hostname bazzite
+fi
+
+# Fix missing hostname file breaking distrobox
+if [ ! -f /etc/hostname ]; then
+  touch /etc/hostname
+fi
+
+if [[ -n "$NEEDED_KARGS" ]]; then
+  echo "Found needed karg changes, applying the following: ${NEEDED_KARGS[*]}"
+  plymouth display-message --text="Preparing System - Please wait, this may take a while" || true
+  rpm-ostree kargs ${NEEDED_KARGS[*]} || exit 1
+  SHOULD_REBOOT=true
+else
+  echo "No karg changes needed"
+fi
+
+mkdir -p /etc/bazzite
+echo $HWS_VER > $HWS_VER_FILE
+echo $IMAGE_NAME > $KNOWN_IMAGE_NAME_FILE
+echo $FEDORA_VERSION > $KNOWN_FEDORA_VERSION_FILE
+echo $IMAGE_BRANCH > $KNOWN_IMAGE_BRANCH_FILE
+
+if [[ "$SHOULD_REBOOT" == true ]]; then
+  echo "Rebooting to apply karg changes"
+  reboot
+fi

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+# Temporarily enable the repositories required by the NVIDIA driver packages.
+dnf5 config-manager setopt 'terra-mesa'.enabled=1
+dnf5 -y copr enable ublue-os/staging
+
+# Install the 64-bit and 32-bit EGL Wayland bridges.
+dnf5 -y install \
+    egl-wayland.x86_64 \
+    egl-wayland.i686 \
+    egl-wayland2.x86_64 \
+    egl-wayland2.i686
+
+# Use the prebuilt open NVIDIA modules mounted by the Containerfile.
+IMAGE_NAME=SKIP_PACKAGE_INSTALL \
+    AKMODNV_PATH=/tmp/rpms/nvidia \
+    MULTILIB=1 \
+    /tmp/rpms/nvidia/ublue-os/nvidia-install.sh
+
+# Remove Nouveau Vulkan profiles and expose NVML for monitoring applications.
+rm -f /usr/share/vulkan/icd.d/nouveau_icd.*.json
+ln -sfn libnvidia-ml.so.1 /usr/lib64/libnvidia-ml.so
+
+# Restore the build repository settings and install NVIDIA's Waydroid package.
+dnf5 config-manager setopt 'terra-mesa'.enabled=0
+dnf5 -y copr disable ublue-os/staging
+dnf5 -y swap --repo terra-extras waydroid waydroid-nvidia

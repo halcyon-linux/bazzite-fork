@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# btop replaces htop, and uupd replaces the upstream update service.
+for pkg in htop ublue-os-update-services; do
+    if rpm -q "$pkg" >/dev/null 2>&1; then
+        dnf5 -y remove "$pkg"
+    fi
+done

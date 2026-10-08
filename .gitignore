@@ -1,0 +1,21 @@
+# Editor & IDE files
+.vscode/
+.zcode/
+.zcodeignore
+.idea/
+*.swp
+*.swo
+*~
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Build & temporary files
+/build_args.txt
+/output.env
+/changelog.md

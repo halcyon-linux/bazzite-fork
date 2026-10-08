@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+docs_dir=/usr/share/ublue-os/docs
+
+if [[ -d "$docs_dir" ]]; then
+    find "$docs_dir" -type f -exec setfattr -n user.component -v ublue-docs {} + 2>/dev/null || true
+fi
