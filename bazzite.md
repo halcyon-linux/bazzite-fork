@@ -16,7 +16,7 @@ Scripts under `build_files/` are mounted into individual Containerfile `RUN` ste
 
 ## Local defaults and CI
 
-`Justfile` and `just_scripts/get-defaults` select `bazzite-nvidia` by default and reject other image targets. The GitHub build, retag, cleanup, and changelog workflows all refer to that same image.
+`Justfile` and `just_scripts/get-defaults` select `bazzite-nvidia` by default and reject other image targets. The GitHub build and cleanup workflows both refer to that same image.
 
 Build the image locally with:
 

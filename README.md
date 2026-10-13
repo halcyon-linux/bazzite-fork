@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="repo_content/Bazzite.svg" alt="Bazzite" />
-</p>
-
 # Bazzite NVIDIA
 
 This fork currently builds and publishes one image: `bazzite-nvidia`. Its final image is based on Universal Blue `base-main`, uses the OGC kernel, retains shared Bazzite gaming and system configuration, and installs the NVIDIA open kernel modules (`nvidia-open`).
@@ -32,8 +28,7 @@ The Containerfile starts from `base-main`, installs the shared gaming and system
 
 ## Workflows
 
-- `.github/workflows/build.yml` builds and publishes `bazzite-nvidia`.
-- `.github/workflows/retag.yml` retags that image for stable releases.
+- `.github/workflows/build.yml` builds and publishes `bazzite-nvidia` on every push to `main` and on a daily schedule.
 - `.github/workflows/clean.yml` removes old versions of that package.
 
 ## Upstream references

@@ -1,4 +1,4 @@
-# Welcome to Bazzite 󰊴
+# Welcome 󰊴
 󱋩 `${MOTD_IMAGE_NAME}:${MOTD_IMAGE_BRANCH}`
 󰟀 `${MOTD_GREENBOOT}`
 
@@ -10,7 +10,3 @@
 | `brew help` | Manage command line packages |
 
 ${MOTD_TIP}
-- **** [Report an issue](https://issues.bazzite.gg/)
-- **󰈙** [Documentation](https://docs.bazzite.gg/)
-- **󰙯** [Discord](https://discord.bazzite.gg/)
-- **** [Bluesky](https://bluesky.bazzite.gg/)
