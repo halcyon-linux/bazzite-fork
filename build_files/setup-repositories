@@ -40,8 +40,8 @@ dnf5 -y config-manager setopt '*bazzite*'.priority=2
 
 if [[ -f /etc/yum.repos.d/negativo17-fedora-multimedia.repo ]]; then
     dnf5 -y config-manager setopt \
-        '*negativo17*'.priority=4 \
-        '*negativo17*'.exclude='mesa-* *xone*'
+        '*fedora-multimedia*'.priority=4 \
+        '*fedora-multimedia*'.exclude='mesa-* *xone*'
 fi
 
 dnf5 -y config-manager setopt \
