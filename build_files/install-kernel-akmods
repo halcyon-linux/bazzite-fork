@@ -27,7 +27,7 @@ done
 # cleanup leftovers that are not covered by kernel-* packages for some reason
 rm -rf /usr/lib/modules
 
-dnf5 -y install \
+dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y install \
     /tmp/kernel-rpms/kernel-[0-9]*.rpm \
     /tmp/kernel-rpms/kernel-core-*.rpm \
     /tmp/kernel-rpms/kernel-modules-*.rpm \

@@ -6,6 +6,6 @@ set -Eeuo pipefail
 # it, so removal doesn't cascade).
 for pkg in htop ublue-os-update-services google-noto-sans-cjk-fonts; do
     if rpm -q "$pkg" >/dev/null 2>&1; then
-        dnf5 -y remove "$pkg"
+        dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y remove "$pkg"
     fi
 done

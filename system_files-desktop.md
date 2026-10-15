@@ -47,8 +47,7 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
 
 Remaining waydroid mentions left in place deliberately (all guarded or inert): the `waydroid-container.service`
 disable no-op in `build_files/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
-the commented package entries in `install-common-packages`, the `waydroid-choose-gpu` download in
-`install-system-integration-files`, and the Waydroid entries in `yafti.yml`.
+the commented package entries in `install-common-packages`, and the Waydroid entries in `yafti.yml`.
 
 ## etc
 
@@ -201,6 +200,7 @@ Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti.
 | `ublue-os/bazaar/hooks.py` | Bazaar transaction hooks (e.g. JetBrains "not supported in this format" dialog) | ✅ |
 | `ublue-os/bazaar/main.yaml` | Bazaar main config: blocklist path, EOL override for OBS, hook registration | ✅ |
 | `yafti/yafti.yml` | "Bazzite Portal" first-run flow definition (welcome, docs links, curated install scripts via flatpak/brew) | ⚠️ portal pkg present, needs session |
+| `zsh-preexec.sh` | bash-preexec-compatible `preexec_functions`/`precmd_functions` hooks for zsh (zsh has the hooks natively; this file exposes the bash-preexec interface for drop-in substitution) | ⚠️ user-sourced from `.zshrc` |
 
 ## usr/share/ublue-os/just
 

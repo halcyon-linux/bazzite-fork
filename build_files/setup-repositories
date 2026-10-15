@@ -19,7 +19,7 @@ for copr in "${copr_repositories[@]}"; do
     dnf5 -y config-manager setopt "${repo_id}.priority=98"
 done
 
-dnf5 -y install --nogpgcheck \
+dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y install --nogpgcheck \
     --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' \
     terra-release terra-release-extras terra-release-mesa
 

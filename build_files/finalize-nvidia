@@ -29,8 +29,6 @@ systemctl enable ublue-nvidia-flatpak-runtime-verify.service || echo "Warning: f
 # Keep Waydroid's container off until the user starts it.
 systemctl disable waydroid-container.service 2>/dev/null || true
 
-dnf5 config-manager setopt skip_if_unavailable=1
-
 # Copy modesetting config into the immutable modprobe directory to enable early KMS.
 if [[ -f /etc/modprobe.d/nvidia-modeset.conf ]]; then
     install -D -m 0644 /etc/modprobe.d/nvidia-modeset.conf \

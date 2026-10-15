@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-dnf5 -y install dmemcg-booster
+dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y install dmemcg-booster
 
 gaming_packages=(
     terra-gamescope.x86_64
@@ -26,13 +26,13 @@ gaming_packages=(
     openxr
     openxr-libs
 )
-dnf5 --enable-repo=terra-mesa --enable-repo=terra --enable-repo=terra-extras \
+dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' --enable-repo=terra-mesa --enable-repo=terra --enable-repo=terra-extras \
     -y install "${gaming_packages[@]}"
 
-dnf5 -y --enable-repo=terra-mesa --enable-repo=terra \
-    --setopt=install_weak_deps=False install steam lutris
+dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y --enable-repo=terra-mesa --enable-repo=terra \
+    install steam lutris
 if rpm -q gamemode >/dev/null 2>&1; then
-    dnf5 -y remove gamemode
+    dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y remove gamemode
 fi
 
 /ctx/ghcurl \
