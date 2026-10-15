@@ -56,7 +56,7 @@ COPY system_files/desktop/ /
 # Use the standalone files exposed by the Homebrew image's /system_files tree.
 COPY --from=brew /system_files/ /tmp/brew_files/
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/install-brew-files
+    /ctx/packages/install-brew-files
 
 # Install kernel
 RUN --mount=type=cache,dst=/var/cache \
@@ -66,34 +66,34 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=akmods-extra,src=/rpms/kmods,dst=/tmp/rpms/kmods-extra \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/install-kernel-akmods && \
-    KERNEL_VERSION="${KERNEL_VERSION}" /ctx/verify kernel && \
-    /ctx/cleanup
+    /ctx/kernel/install-kernel-akmods && \
+    KERNEL_VERSION="${KERNEL_VERSION}" /ctx/finalization/verify kernel && \
+    /ctx/shared/cleanup
 
 # Configure repositories and package version locks used by later build steps.
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/setup-repositories && \
-    /ctx/verify repos && \
-    /ctx/cleanup
+    /ctx/packages/setup-repositories && \
+    /ctx/finalization/verify repos && \
+    /ctx/shared/cleanup
 
 # Install the patched gaming stack and its supporting codecs.
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/install-gaming-stack && \
-    /ctx/cleanup
+    /ctx/packages/install-gaming-stack && \
+    /ctx/shared/cleanup
 
 # Remove packages superseded by image tooling.
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/global-remove && \
-    /ctx/cleanup
+    /ctx/packages/global-remove && \
+    /ctx/shared/cleanup
 
 # Install shared gaming, hardware, and system utilities.
 RUN --mount=type=cache,dst=/var/cache \
@@ -101,8 +101,8 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
-    /ctx/install-common-packages && \
-    /ctx/cleanup
+    /ctx/packages/install-common-packages && \
+    /ctx/shared/cleanup
 
 # Install Steam, Lutris, gaming middleware, and Winetricks.
 RUN --mount=type=cache,dst=/var/cache \
@@ -110,9 +110,9 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
-    /ctx/install-steam-lutris && \
-    /ctx/verify packages && \
-    /ctx/cleanup
+    /ctx/packages/install-steam-lutris && \
+    /ctx/finalization/verify packages && \
+    /ctx/shared/cleanup
 
 # Install ujust-picker from the latest GitHub release.
 RUN --mount=type=cache,dst=/var/cache \
@@ -120,16 +120,16 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
-    /ctx/install-ujust-picker && \
-    /ctx/cleanup
+    /ctx/packages/install-ujust-picker && \
+    /ctx/shared/cleanup
 
 # Mount non-removable device partitions automatically under /media/media-automount/ (ublue-os-media-automount-udev).
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/install-media-automount && \
-    /ctx/cleanup
+    /ctx/packages/install-media-automount && \
+    /ctx/shared/cleanup
 
 # Cleanup & Finalize
 # Copy final system file overrides into root
@@ -139,35 +139,45 @@ COPY system_files/overrides/ /
 # repositories, and configures the services shipped in the image. Metadata, initramfs, and account
 # finalization run here and once more after the NVIDIA section, so the last pass includes everything.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/configure-desktop-integration
+    rm -f /etc/profile.d/toolbox.sh && \
+    /ctx/system/configure-desktop-integration && \
+    rm -f /usr/lib/systemd/system/service.d/50-keep-warm.conf
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/import-bazzite-justfiles
+    /ctx/just/import-bazzite-justfiles
 
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/configure-system-policy
+    /ctx/system/configure-system-policy
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/configure-system-services
+    /ctx/system/configure-system-services
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=secret,id=GITHUB_TOKEN \
-    /ctx/install-system-integration-files
+    /ctx/packages/install-system-integration-files
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/image-info
+    /ctx/finalization/image-info
 
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/build-initramfs
+    /ctx/kernel/build-initramfs
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/finalize
+    /ctx/finalization/finalize && \
+    rm -rf \
+        /etc/.pwd.lock \
+        /etc/passwd- \
+        /etc/group- \
+        /etc/shadow- \
+        /etc/gshadow- \
+        /etc/subuid- \
+        /etc/subgid-
 
 #############################
 # NVIDIA DRIVER INTEGRATION
@@ -187,8 +197,8 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/configure-nvidia && \
-    /ctx/cleanup
+    /ctx/nvidia/configure-nvidia && \
+    /ctx/shared/cleanup
 
 # Install NVIDIA driver
 RUN --mount=type=cache,dst=/var/cache \
@@ -197,32 +207,41 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=akmods-nvidia,src=/rpms,dst=/tmp/rpms/nvidia \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
-    /ctx/install-nvidia-driver && \
-    /ctx/verify nvidia && \
-    /ctx/cleanup
+    /ctx/nvidia/install-nvidia-driver && \
+    rm -f /usr/share/vulkan/icd.d/nouveau_icd.*.json && \
+    /ctx/finalization/verify nvidia && \
+    /ctx/shared/cleanup
 
 # Cleanup & Finalize
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/finalize-nvidia
+    /ctx/nvidia/finalize-nvidia
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/image-info
+    /ctx/finalization/image-info
 
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/build-initramfs
+    /ctx/kernel/build-initramfs
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/finalize
+    /ctx/finalization/finalize && \
+    rm -rf \
+        /etc/.pwd.lock \
+        /etc/passwd- \
+        /etc/group- \
+        /etc/shadow- \
+        /etc/gshadow- \
+        /etc/subuid- \
+        /etc/subgid-
 
 # Verify the published image before the final lint gate.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/verify final
+    /ctx/finalization/verify final
 
 RUN --mount=type=tmpfs,target=/run --network=none bootc container lint

@@ -1,0 +1,290 @@
+.
+├── build_files
+│   ├── finalization
+│   │   ├── finalize
+│   │   ├── image-info
+│   │   └── verify
+│   ├── just
+│   │   └── import-bazzite-justfiles
+│   ├── kernel
+│   │   ├── build-initramfs
+│   │   ├── install-kernel-akmods
+│   │   └── install-kmods
+│   ├── nvidia
+│   │   ├── configure-nvidia
+│   │   ├── finalize-nvidia
+│   │   └── install-nvidia-driver
+│   ├── packages
+│   │   ├── global-remove
+│   │   ├── install-brew-files
+│   │   ├── install-common-packages
+│   │   ├── install-gaming-stack
+│   │   ├── install-media-automount
+│   │   ├── install-steam-lutris
+│   │   ├── install-system-integration-files
+│   │   ├── install-ujust-picker
+│   │   └── setup-repositories
+│   ├── shared
+│   │   ├── cleanup
+│   │   ├── dnf5-setopt
+│   │   └── ghcurl
+│   └── system
+│       ├── configure-desktop-integration
+│       ├── configure-system-policy
+│       └── configure-system-services
+├── Containerfile
+├── cosign.pub
+├── .gitattributes
+├── .github
+│   ├── pull.yml
+│   ├── renovate.json5
+│   └── workflows
+│       ├── build.yml
+│       └── clean.yml
+├── .gitignore
+├── Justfile
+├── just_scripts
+│   ├── build-image
+│   ├── container_mgr
+│   ├── get-defaults
+│   ├── manage-images
+│   └── run-image
+├── LICENSE
+├── README.md
+├── system_files
+│   ├── desktop
+│   │   ├── etc
+│   │   │   ├── conf.d
+│   │   │   │   └── btrfs-dedup
+│   │   │   ├── distrobox
+│   │   │   │   └── distrobox.ini
+│   │   │   ├── dnf
+│   │   │   │   └── dnf.conf
+│   │   │   ├── environment
+│   │   │   ├── geoclue
+│   │   │   │   └── conf.d
+│   │   │   │       └── 99-beacondb.conf
+│   │   │   ├── profile.d
+│   │   │   │   ├── askpass.sh
+│   │   │   │   └── open.sh
+│   │   │   ├── security
+│   │   │   │   └── limits.d
+│   │   │   │       └── memlock.conf
+│   │   │   ├── skel
+│   │   │   │   └── .config
+│   │   │   │       ├── autostart
+│   │   │   │       │   └── bazzite-portal.desktop
+│   │   │   │       └── user-tmpfiles.d
+│   │   │   │           └── discord-rpc.conf
+│   │   │   ├── systemd
+│   │   │   │   ├── system
+│   │   │   │   │   └── beesd@.service.d
+│   │   │   │   │       └── bees-timeout.conf
+│   │   │   │   ├── system.conf.d
+│   │   │   │   │   └── timeout.conf
+│   │   │   │   ├── user.conf.d
+│   │   │   │   │   └── timeout.conf
+│   │   │   │   └── zram-generator.conf
+│   │   │   ├── ublue-os
+│   │   │   │   └── topgrade.toml
+│   │   │   ├── uupd
+│   │   │   │   └── config.json
+│   │   │   └── xdg
+│   │   │       └── mimeapps.list
+│   │   └── usr
+│   │       ├── bin
+│   │       │   ├── bazzite-rollback-helper
+│   │       │   ├── bazzite-steam
+│   │       │   ├── bazzite-steam-bpm
+│   │       │   ├── bazzite-steam-firstrun
+│   │       │   ├── bbrew-helper
+│   │       │   ├── boot-windows
+│   │       │   ├── brh -> bazzite-rollback-helper
+│   │       │   ├── bruh
+│   │       │   ├── copr
+│   │       │   ├── crh -> custom-resolution-helper
+│   │       │   ├── custom-resolution-helper
+│   │       │   ├── gameclass
+│   │       │   └── mesa-git
+│   │       ├── lib
+│   │       │   ├── dracut
+│   │       │   │   └── dracut.conf.d
+│   │       │   │       └── 80-vfio.conf
+│   │       │   ├── modules-load.d
+│   │       │   │   └── wine-ntsync.conf
+│   │       │   ├── sysctl.d
+│   │       │   │   ├── 60-kernel.conf
+│   │       │   │   ├── 70-gaming.conf
+│   │       │   │   ├── 75-networking.conf
+│   │       │   │   └── 80-inotify.conf
+│   │       │   ├── systemd
+│   │       │   │   ├── system
+│   │       │   │   │   ├── bazzite-hardware-setup.service
+│   │       │   │   │   ├── bazzite-iwd-migration.service
+│   │       │   │   │   ├── bazzite-libvirtd-setup.service
+│   │       │   │   │   ├── beesd@.timer
+│   │       │   │   │   ├── cockpit.service
+│   │       │   │   │   ├── dev-hugepages1G.mount
+│   │       │   │   │   ├── force-wol.service
+│   │       │   │   │   ├── fstrim.service.d
+│   │       │   │   │   │   └── workaround-no-root-trim.conf
+│   │       │   │   │   ├── incus-workaround.service
+│   │       │   │   │   ├── kmod-sleep-workaround@.service
+│   │       │   │   │   └── mcelog.service.d
+│   │       │   │   │       └── override.conf
+│   │       │   │   └── user
+│   │       │   │       ├── bazzite-dynamic-fixes.service
+│   │       │   │       ├── bazzite-user-setup.service
+│   │       │   │       ├── ntfs-nag.service
+│   │       │   │       └── steam-icons-cleanup.service
+│   │       │   ├── sysusers.d
+│   │       │   │   └── plugdev.conf
+│   │       │   ├── tmpfiles.d
+│   │       │   │   ├── bazzite-libvirt.conf
+│   │       │   │   └── incus-workaround.conf
+│   │       │   ├── tuned
+│   │       │   │   └── profiles
+│   │       │   │       ├── balanced-bazzite
+│   │       │   │       │   ├── script.sh
+│   │       │   │       │   └── tuned.conf
+│   │       │   │       ├── powersave-bazzite
+│   │       │   │       │   ├── script.sh
+│   │       │   │       │   └── tuned.conf
+│   │       │   │       └── throughput-performance-bazzite
+│   │       │   │           ├── script.sh
+│   │       │   │           └── tuned.conf
+│   │       │   └── udev
+│   │       │       └── rules.d
+│   │       │           └── 60-schedulers.rules
+│   │       ├── libexec
+│   │       │   ├── bazzite-bling-fastfetch
+│   │       │   ├── bazzite-boot-remount
+│   │       │   ├── bazzite-dynamic-fixes
+│   │       │   ├── bazzite-fetch-image
+│   │       │   ├── bazzite-hardware-setup
+│   │       │   ├── bazzite-iwd-migration
+│   │       │   ├── bazzite-powersave
+│   │       │   ├── bazzite-privileged-user-setup
+│   │       │   ├── bazzite-snapper-config
+│   │       │   ├── bazzite-user-setup
+│   │       │   ├── force-wol
+│   │       │   ├── hwsupport
+│   │       │   │   └── sysid
+│   │       │   ├── ntfs-exfat-monitor-script
+│   │       │   ├── topgrade
+│   │       │   │   └── third-party-css-loader-update
+│   │       │   ├── ublue-motd
+│   │       │   └── uupd-update
+│   │       └── share
+│   │           ├── applications
+│   │           │   ├── bazzite-steam-bpm.desktop
+│   │           │   └── bbrew.desktop
+│   │           ├── containers
+│   │           │   └── systemd
+│   │           │       └── cockpit-container.container
+│   │           ├── plymouth
+│   │           │   └── themes
+│   │           │       └── spinner
+│   │           │           └── watermark.png
+│   │           ├── polkit-1
+│   │           │   ├── actions
+│   │           │   │   └── org.bazzite.privileged.user.setup.policy
+│   │           │   └── rules.d
+│   │           │       └── 20-privileged-ruser.rules
+│   │           ├── ublue-os
+│   │           │   ├── bazaar
+│   │           │   │   ├── blocklist.yaml
+│   │           │   │   ├── content.yaml
+│   │           │   │   ├── gaming.jxl
+│   │           │   │   ├── hooks.py
+│   │           │   │   ├── main.yaml
+│   │           │   │   ├── music.jxl
+│   │           │   │   ├── office.jxl
+│   │           │   │   ├── streaming.jxl
+│   │           │   │   └── utilities.jxl
+│   │           │   ├── bbrew.png
+│   │           │   ├── firefox-config
+│   │           │   │   └── 01-bazzite-global.js
+│   │           │   ├── just
+│   │           │   │   ├── 10-update.just
+│   │           │   │   ├── 80-bazzite.just
+│   │           │   │   ├── 81-bazzite-fixes.just
+│   │           │   │   ├── 82-bazzite-apps.just
+│   │           │   │   ├── 83-bazzite-audio.just
+│   │           │   │   ├── 87-bazzite-framegen.just
+│   │           │   │   ├── 89-bazzite-mesa-git.just
+│   │           │   │   ├── maintenance.just
+│   │           │   │   └── system-tools.just
+│   │           │   ├── motd
+│   │           │   │   ├── env
+│   │           │   │   └── template.md
+│   │           │   └── topgrade.toml
+│   │           ├── wireplumber
+│   │           │   └── wireplumber.conf.d
+│   │           │       └── 51-disable-suspension.conf
+│   │           ├── yafti
+│   │           │   └── yafti.yml
+│   │           └── zsh-preexec.sh
+│   ├── nvidia
+│   │   ├── etc
+│   │   │   └── distrobox
+│   │   │       └── distrobox.ini
+│   │   └── usr
+│   │       ├── bin
+│   │       │   ├── dlss-swapper
+│   │       │   └── dlss-swapper-dll
+│   │       ├── lib
+│   │       │   ├── modprobe.d
+│   │       │   │   └── nvidia-power.conf
+│   │       │   ├── systemd
+│   │       │   │   └── system
+│   │       │   │       ├── ublue-nvidia-flatpak-runtime-sync.service
+│   │       │   │       └── ublue-nvidia-flatpak-runtime-verify.service
+│   │       │   └── udev
+│   │       │       └── rules.d
+│   │       │           └── 80-nvidia-pm.rules
+│   │       ├── libexec
+│   │       │   ├── ublue-nvidia-flatpak-runtime-notify
+│   │       │   └── ublue-nvidia-flatpak-runtime-sync
+│   │       └── share
+│   │           └── ublue-os
+│   │               ├── firefox-config
+│   │               │   └── 02-bazzite-nvidia.js
+│   │               └── just
+│   │                   └── 95-bazzite-nvidia.just
+│   └── overrides
+│       ├── etc
+│       │   ├── favicon.png
+│       │   ├── greenboot
+│       │   │   └── greenboot.conf
+│       │   └── profile.d
+│       │       └── dnf-dummy.sh
+│       └── usr
+│           ├── bin
+│           │   ├── dnf
+│           │   └── switcherooctl
+│           ├── lib
+│           │   └── udev
+│           │       └── hwdb.d
+│           │           └── 60-keyboard.hwdb
+│           └── share
+│               ├── alsa
+│               │   └── ucm2
+│               │       └── USB-Audio
+│               │           └── Sony
+│               │               └── DualSense-PS5.conf
+│               ├── bazzite-cli
+│               │   ├── bling
+│               │   └── bling.fish
+│               ├── fish
+│               │   └── functions
+│               │       ├── fish_greeting.fish
+│               │       └── fish_prompt.fish
+│               └── ublue-os
+│                   └── homebrew
+│                       └── bazzite-cli.Brewfile
+├── system_files-desktop.md
+├── TODO.md
+└── tree.list
+
+112 directories, 176 files

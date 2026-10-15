@@ -3,18 +3,18 @@
 source /usr/lib/ujust/ujust.sh
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
-DEFAULT_IMAGE=$(jq -r '."image-name"' < $IMAGE_INFO)
-DEFAULT_PROVIDER=$(jq -r '."image-vendor"' < $IMAGE_INFO)
-DEFAULT_BRANCH=stable
+DEFAULT_IMAGE=$(jq -er '."image-name" | strings | select(length > 0)' "$IMAGE_INFO")
+DEFAULT_PROVIDER=$(jq -er '."image-vendor" | strings | select(length > 0)' "$IMAGE_INFO")
+DEFAULT_BRANCH=$(jq -r '."image-branch" // "stable"' "$IMAGE_INFO")
 
 # Cache skopeo output if possible (only if bkt already exists)
 if command -v bkt >/dev/null 2>&1; then
-    skopeo() { bkt --ttl=30m --stale=5m -- command skopeo "$@"; }
+  skopeo() { bkt --ttl=30m --stale=5m -- command skopeo "$@"; }
 fi
 
-helptext="====== Bazzite Rollback Helper Util ======
+helptext="====== ${DEFAULT_IMAGE} Rollback Helper ======
 
-This tool helps with rollbacks and rebases for the Bazzite NVIDIA image.
+This tool helps with rollbacks and rebases for ${DEFAULT_IMAGE}.
 
 Usage: $(basename "$0") [OPTION] [ARGUMENT]
 
@@ -25,18 +25,16 @@ Options:
   rebase [TARGET]    Rebase to target (format: TAG, IMAGE:TAG, or full ostree ref)
 
 Examples:
-  $(basename "$0") list stable
+  $(basename "$0") list $DEFAULT_BRANCH
   $(basename "$0") rebase testing
-  $(basename "$0") rebase bazzfin-nvidia:stable
+  $(basename "$0") rebase $DEFAULT_IMAGE:$DEFAULT_BRANCH
 
-For help: https://discord.bazzite.gg"
+For help: https://github.com/halcyon-linux/bazzite-fork/issues"
 
-VARIANTS=(
-  "bazzfin-nvidia"
-)
+VARIANTS=("$DEFAULT_IMAGE")
 
 # Utility functions
-confirm() { 
+confirm() {
   local msg="$1"
   echo -n "$msg ${yellow}(Y/n)${normal} "
   read -r reply
@@ -59,20 +57,20 @@ skopeo_tags() {
   local provider="$1"
   local image="$2"
   local filter="${3:-all}"
-  
+
   local regex='.Tags[]'
   case "$filter" in
-    stable) regex="$regex | select(test(\"^stable\"))" ;;
-    testing) regex="$regex | select(test(\"^testing\"))" ;;
+  stable) regex="$regex | select(test(\"^stable\"))" ;;
+  testing) regex="$regex | select(test(\"^testing\"))" ;;
   esac
-  
+
   skopeo list-tags "docker://ghcr.io/$provider/$image" | jq -r "$regex" | sort
 }
 
 available_variants() {
-  local provider="${1:-ublue-os}"
+  local provider="${1:-$DEFAULT_PROVIDER}"
   echo >&2 "Checking variants from $provider..."
-  
+
   for variant in "${VARIANTS[@]}"; do
     skopeo list-tags "docker://ghcr.io/$provider/$variant" >/dev/null 2>&1 && echo "$variant"
   done
@@ -83,7 +81,7 @@ print_status() {
   local current=$(rpm-ostree status --json | jq -r '.deployments[] | select(.booted == true) | .["container-image-reference"]')
   # Only treat deployments with .staged==true as pending.
   local pending=$(rpm-ostree status --json | jq -r '.deployments[] | select(.staged == true) | .["container-image-reference"]' | head -1)
-  
+
   [[ -n "$current" ]] && echo "  ${bold}Active:${normal} ${green}$current${normal}"
   [[ -n "$pending" && "$pending" != "null" ]] && echo "  ${bold}Pending:${normal} ${yellow}$pending${normal} ${yellow}(next boot)${normal}"
   echo
@@ -92,33 +90,28 @@ print_status() {
 rebase_to() {
   local target="$1"
   local skip_confirm="${2:-false}"
-  
-  # Extract image name for DE checking
-  local img_name
-  case "$target" in
-    ostree-*) img_name=$(echo "$target" | sed 's/.*\/\([^:]*\).*/\1/') ;;
-    *:*) img_name=$(echo "$target" | cut -d':' -f1) ;;
-    *) img_name="$DEFAULT_IMAGE" ;;
-  esac
-  
+
   # Build full ostree ref if needed
   local full_ref="$target"
   case "$target" in
-    ostree-*) ;;
-    *:*)
-      full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$target"
-      ;;
-    *)
-      full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$DEFAULT_IMAGE:$target"
-      ;;
+  ostree-*) ;;
+  *:*)
+    full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$target"
+    ;;
+  *)
+    full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$DEFAULT_IMAGE:$target"
+    ;;
   esac
-  
+
   echo "Rebasing to: ${bold}$full_ref${normal}"
-  
+
   if [[ "$skip_confirm" != true ]]; then
-    confirm "Continue?" || { echo "Cancelled."; return 1; }
+    confirm "Continue?" || {
+      echo "Cancelled."
+      return 1
+    }
   fi
-  
+
   echo "Performing rebase..."
   if rpm-ostree rebase "$full_ref"; then
     echo "${green}Rebase successful!${normal} Reboot to apply changes."
@@ -129,20 +122,20 @@ rebase_to() {
 }
 
 pick_image() {
-  local provider="${1:-ublue-os}"
+  local provider="${1:-$DEFAULT_PROVIDER}"
   local variants=$(available_variants "$provider")
-  
+
   if [[ -z "$variants" ]]; then
     echo >&2 "${red}No variants found for provider: $provider${normal}"
     return 1
   fi
-  
+
   local options=()
   while IFS= read -r line; do
     [[ -n "$line" ]] && options+=("$line")
-  done <<< "$variants"
+  done <<<"$variants"
   options+=("Back")
-  
+
   echo >&2 "${bold}Available images from ${green}$provider${normal}:"
   choose "${options[@]}"
 }
@@ -151,19 +144,19 @@ pick_version() {
   local provider="$1"
   local image="$2"
   local filter="${3:-all}"
-  
+
   local versions=$(skopeo_tags "$provider" "$image" "$filter")
   if [[ -z "$versions" ]]; then
     echo >&2 "${red}No $filter versions found for $image${normal}"
     return 1
   fi
-  
+
   local options=()
   while IFS= read -r line; do
     [[ -n "$line" ]] && options+=("$line")
-  done <<< "$versions"
+  done <<<"$versions"
   options+=("Back")
-  
+
   echo >&2 "${bold}$filter versions for ${green}$image${normal}:"
   choose "${options[@]}"
 }
@@ -189,7 +182,7 @@ choose_filter() {
 # Command functions
 list_images() {
   local branch="${1:-$DEFAULT_BRANCH}"
-  
+
   if [[ "$branch" == "all" ]]; then
     echo >&2 "Listing all available images..."
     skopeo_tags "$DEFAULT_PROVIDER" "$DEFAULT_IMAGE" "all"
@@ -203,8 +196,8 @@ current() {
   local pretty_IMAGE
   local pretty_TAG
   {
-  read -r pretty_IMAGE
-  read -r pretty_TAG
+    read -r pretty_IMAGE
+    read -r pretty_TAG
   } < <(
     rpm-ostree status --json | jq -r '
       .deployments[]
@@ -236,17 +229,17 @@ rollback() {
 rebase() {
   local target="$1"
   local skip_confirm=false
-  
+
   if [[ "$2" == "-y" || "$2" == "--yes" ]]; then
     skip_confirm=true
   fi
-  
+
   if [[ -z "$target" ]]; then
     echo >&2 "Usage: rebase TARGET"
     echo >&2 "Examples: rebase stable, rebase bazzfin-nvidia:testing"
     return 1
   fi
-  
+
   rebase_to "$target" "$skip_confirm"
 }
 
@@ -256,90 +249,89 @@ interactive_menu() {
     echo "$helptext"
     echo
     print_status
-    
+
     local action=$(choose "List Images" "Show Current" "Rollback" "Rebase" "Custom Provider" "Exit")
-    
+
     case "$action" in
-      "List Images")
+    "List Images")
+      clear
+      local img=$(pick_image "$DEFAULT_PROVIDER")
+      [[ "$img" != "Back" ]] && {
         clear
-        local variants=$(available_variants "$DEFAULT_PROVIDER")
-        local img=$(pick_image "$DEFAULT_PROVIDER")
-        [[ "$img" != "Back" ]] && { 
+        local filter=$(choose_filter "$DEFAULT_PROVIDER" "$img")
+        [[ "$filter" != "Back" ]] && {
           clear
-          local filter=$(choose_filter "$DEFAULT_PROVIDER" "$img")
-          [[ "$filter" != "Back" ]] && {
+          skopeo_tags "$DEFAULT_PROVIDER" "$img" "${filter,,}"
+          press_any_key
+        }
+      }
+      ;;
+
+    "Show Current")
+      clear
+      current
+      press_any_key
+      ;;
+
+    "Rollback")
+      clear
+      rollback
+      press_any_key
+      ;;
+
+    "Rebase")
+      clear
+      local img=$(pick_image "$DEFAULT_PROVIDER")
+      if [[ "$img" != "Back" ]]; then
+        local filter=$(choose_filter "$DEFAULT_PROVIDER" "$img")
+        if [[ "$filter" != "Back" ]]; then
+          local version=$(pick_version "$DEFAULT_PROVIDER" "$img" "${filter,,}")
+          [[ "$version" != "Back" && -n "$version" ]] && {
             clear
-            skopeo_tags "$DEFAULT_PROVIDER" "$img" "${filter,,}"
+            rebase_to "ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$img:$version"
             press_any_key
           }
-        }
-        ;;
-        
-      "Show Current")
-        clear
-        current
-        press_any_key
-        ;;
-        
-      "Rollback")
-        clear
-        rollback
-        press_any_key
-        ;;
-        
-      "Rebase")
-        clear
-        local img=$(pick_image "$DEFAULT_PROVIDER")
-        if [[ "$img" != "Back" ]]; then
-          local filter=$(choose_filter "$DEFAULT_PROVIDER" "$img")
+        fi
+      fi
+      ;;
+
+    "Custom Provider")
+      clear
+      echo "Enter provider name (default: ublue-os):"
+      read -r provider
+      provider="${provider:-ublue-os}"
+      provider=$(echo "$provider" | tr '[:upper:]' '[:lower:]')
+
+      local img=$(pick_image "$provider")
+      if [[ "$img" != "Back" ]]; then
+        echo "Enter image:tag or press Enter to browse versions:"
+        read -r manual_target
+        if [[ -n "$manual_target" ]]; then
+          rebase_to "$(signing_scheme)/$provider/$manual_target"
+        else
+          local filter=$(choose_filter "$provider" "$img")
           if [[ "$filter" != "Back" ]]; then
-            local version=$(pick_version "$DEFAULT_PROVIDER" "$img" "${filter,,}")
-            [[ "$version" != "Back" && -n "$version" ]] && {
-              clear
-              rebase_to "ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$img:$version"
-              press_any_key
-            }
+            local version=$(pick_version "$provider" "$img" "${filter,,}")
+            [[ "$version" != "Back" && -n "$version" ]] && rebase_to "$(signing_scheme)/$provider/$img:$version"
           fi
         fi
-        ;;
-        
-      "Custom Provider")
-        clear
-        echo "Enter provider name (default: ublue-os):"
-        read -r provider
-        provider="${provider:-ublue-os}"
-        provider=$(echo "$provider" | tr '[:upper:]' '[:lower:]')
-        
-        local img=$(pick_image "$provider")
-        if [[ "$img" != "Back" ]]; then
-          echo "Enter image:tag or press Enter to browse versions:"
-          read -r manual_target
-          if [[ -n "$manual_target" ]]; then
-            rebase_to "$(signing_scheme)/$provider/$manual_target"
-          else
-            local filter=$(choose_filter "$provider" "$img")
-            if [[ "$filter" != "Back" ]]; then
-              local version=$(pick_version "$provider" "$img" "${filter,,}")
-              [[ "$version" != "Back" && -n "$version" ]] && rebase_to "$(signing_scheme)/$provider/$img:$version"
-            fi
-          fi
-        fi
-        press_any_key
-        ;;
-        
-      "Exit")
-        echo "Exiting..."
-        exit 0
-        ;;
+      fi
+      press_any_key
+      ;;
+
+    "Exit")
+      echo "Exiting..."
+      exit 0
+      ;;
     esac
   done
 }
 
 case "$1" in
-  "list") list_images "$2" ;;
-  "rollback") rollback "$2" ;;
-  "current") current ;;
-  "rebase") rebase "$2" "$3" ;;
-  "help"|"-h"|"--help"|"") interactive_menu ;;
-  *) echo "Unknown option: $1. Run without arguments for interactive mode." ;;
+"list") list_images "$2" ;;
+"rollback") rollback "$2" ;;
+"current") current ;;
+"rebase") rebase "$2" "$3" ;;
+"help" | "-h" | "--help" | "") interactive_menu ;;
+*) echo "Unknown option: $1. Run without arguments for interactive mode." ;;
 esac

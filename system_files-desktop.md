@@ -1,11 +1,10 @@
-# `system_files/desktop/` — file audit
+# `system_files/desktop/` — payload map
 
-Every file under `system_files/desktop/` listed with its purpose and whether it is needed in this fork.
-`system_files/desktop/` is copied onto `/` early in the `bazzite` stage (`Containerfile:52`). These are
-upstream-Bazzite integration files: configs and helpers that make the installed packages behave like Bazzite.
-Since this fork currently ships **no desktop session and no waydroid**, some files are dead weight here.
+`system_files/desktop/` is copied onto `/` by the `Containerfile`. Its layout mirrors installed paths;
+keep it path-based rather than bundling assets into an opaque archive. This is a map of the upstream
+Bazzite integrations retained by this single-image fork.
 
-**Scale:** 134 files, ~4.1 MB.
+**Current scale:** 109 tracked entries after grouping the `ujust` sources.
 
 **Legend:** ✅ active in this image · ⚠️ conditional (needs a graphical session, an optional package, or a kernel arg) · ❌ dormant/dead in this fork
 
@@ -13,23 +12,21 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
 
 | Section | Contents |
 |---|---|
-| [Audit summary](#audit-summary) | Counts and trim candidates |
+| [Audit summary](#audit-summary) | Current scope and prior trims |
 | [etc](#etc) | System-wide defaults (20 files) |
 | [usr/bin](#usrbin) | User-facing CLI tools (15 entries) |
 | [usr/libexec](#usrlibexec) | Privileged/background helpers (20 files) |
 | [systemd, udev, sysctl and plumbing](#systemd-udev-sysctl-and-plumbing) | Units, udev rules, sysctls, tuned profiles, modprobe/dracut/sysusers/tmpfiles |
 | [usr/share](#usrshare) | Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti |
-| [usr/share/ublue-os/just](#usrshareublue-osjust) | The 16 `ujust` recipe files |
+| [usr/share/ublue-os/just](#usrshareublue-osjust) | The 9 `ujust` source files |
 
 ## Audit summary
 
-| Class | Count | Notes |
-|---|---|---|
-| ✅ Active | ~60 | Core Bazzite behavior: hardware setup, user setup, updates (uupd), brew/bbrew, Bazaar, cockpit, tuned, sysctls, udev rules, MOTD, docs, most ujust recipes |
-| ⚠️ Conditional | ~45 | Light up only with a graphical session, opt-in package, or kernel arg — correct to keep (Hyprland is planned) |
-| ❌ Dead weight | ~18 | Removed from the repository (see below) |
+The earlier per-file audit was written against a 134-entry tree. Its old active/conditional counts are
+not current; the current tracked payload count is shown above. `system_files-desktop.md` is maintained
+as a grouping guide, not as generated build metadata.
 
-**Removed deadweight (this cleanup):**
+**Previously removed deadweight:**
 
 1. **Waydroid family (15 files)** — image deliberately ships no Waydroid:
    `etc/default/waydroid-launcher`, `usr/bin/waydroid-launcher`,
@@ -38,7 +35,7 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
    `usr/share/polkit-1/actions/org.bazzite.waydroid.policy`, `usr/share/polkit-1/rules.d/30-waydroid.rules`,
    `usr/share/applications/waydroid-container-restart.desktop`,
    `usr/share/applications/Waydroid/{capsule,hero,icon,logo,store-capsule}.png`.
-   The matching `import` line was dropped from `build_files/import-bazzite-justfiles`.
+   The matching `import` line was dropped from `build_files/just/import-bazzite-justfiles`.
 2. `usr/bin/edit` symlink + `etc/profile.d/ms-edit-default-editor.sh` — `msedit` is commented out of the package list.
 3. `etc/systemd/system/beesd@.service.d/override.conf` — byte-identical duplicate of `bees-timeout.conf`.
 4. `usr/share/polkit-1/rules.d/90-corectrl.rules` — CoreCtrl isn't installed by this fork.
@@ -46,7 +43,7 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
 6. **Device-specific trim** (per maintainer decision): the akmods install list was reduced to `nct6687d` only (MSI Z790 sensor chip); removed `usr/lib/modprobe.d/fw-charge-control.conf`, `usr/lib/modprobe.d/new-lg4ff.conf`, `usr/lib/udev/rules.d/90-dolphin-motion.rules`; dropped the `iio-sensor-proxy`, `usbip`, and `obs-studio-plugin-vkcapture-hook-libs` packages.
 
 Remaining waydroid mentions left in place deliberately (all guarded or inert): the `waydroid-container.service`
-disable no-op in `build_files/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
+disable no-op in `build_files/nvidia/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
 the commented package entries in `install-common-packages`, and the Waydroid entries in `yafti.yml`.
 
 ## etc
@@ -204,23 +201,17 @@ Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti.
 
 ## usr/share/ublue-os/just
 
-The 16 `ujust` recipe files — each ships one command group.
+The 9 `ujust` source files preserve the same recipe names. Small related groups are combined; the
+large upstream feature files remain separate for easier updates.
 
-| File | Purpose | Needed? |
-|---|---|---|
-| `10-update.just` | `ujust update` (via uupd), changelogs | ✅ |
-| `80-bazzite.just` | Big grab-bag: ssh toggle, snapper config, ramoops, watchdog, ntfs service toggle, etc. | ✅ |
-| `81-bazzite-fixes.just` | Game/Steam fixes: GMod patch, kill Wine/Proton, WoL toggle | ✅ |
-| `82-bazzite-apps.just` | Install/manage GUI apps via layering (CoolerControl, …) | ⚠️ |
-| `82-bazzite-beesd.just` | `configure-beesd` — sized BTRFS dedup config per filesystem | ✅ |
-| `82-bazzite-cockpit.just` | enable/disable/status Cockpit | ✅ |
-| `82-bazzite-waydroid.just` | `configure-waydroid` helpers (init/gpu/reset) | ❌ |
-| `83-bazzite-audio.just` | Create virtual PipeWire channels (Game/Voice/Browser/Music) for OBS | ⚠️ |
-| `84-bazzite-virt.just` | `setup-virtualization` (libvirt/incus setup flows) | ✅ |
-| `85-bazzite-image.just` | `restore-input-remapper` for non-desktop images | ⚠️ |
-| `86-bazzite-windows.just` | Adds "boot Windows" shortcut to Steam (sudoers + nonsteam game) | ✅ |
-| `87-bazzite-framegen.just` | Installs LSFG-VK (Lossless Scaling frame gen) | ⚠️ |
-| `89-bazzite-mesa-git.just` | Fetch/install Mesa Git builds from mesa-maker | ⚠️ |
-| `90-bazzite-picker.just` | Installs/runs the `ujust` interactive picker | ✅ |
-| `92-bazzite-verify.just` | `verify-image` — rebases unverified images to the signed reference | ✅ |
-| `93-bazzite-update.just` | Adds the updater to Steam BPM via `steamos-add-to-steam` | ⚠️ |
+| File | Purpose |
+|---|---|
+| `10-update.just` | `ujust update` (via uupd), changelogs |
+| `80-bazzite.just` | Core system toggles and helpers |
+| `81-bazzite-fixes.just` | Game/Steam fixes |
+| `82-bazzite-apps.just` | Install/manage GUI apps via layering |
+| `83-bazzite-audio.just` | Virtual PipeWire channels for OBS |
+| `87-bazzite-framegen.just` | LSFG-VK frame generation |
+| `89-bazzite-mesa-git.just` | Mesa Git builds |
+| `system-tools.just` | Beesd, Cockpit, virtualization, input-remapper, and Windows boot recipes |
+| `maintenance.just` | Picker, image verification, and updater-to-Steam recipes |

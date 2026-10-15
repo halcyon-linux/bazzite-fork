@@ -44,8 +44,8 @@ run-container target="" image="":
 
 # List Images
 list-images:
-    @{{ project_root }}/just_scripts/list-images
+    @{{ project_root }}/just_scripts/manage-images list
 
 # Clean Images
 clean-images:
-    @{{ project_root }}/just_scripts/cleanup-images
+    @{{ project_root }}/just_scripts/manage-images clean
