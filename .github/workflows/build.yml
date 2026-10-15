@@ -59,7 +59,7 @@ jobs:
           docs_repo: ublue-os/docs.bazzite.gg
           GH_TOKEN: ${{ github.token }}
         run: |
-          DOCS_DIR="${{ github.workspace }}/system_files/desktop/shared/usr/share/ublue-os/docs/html"
+          DOCS_DIR="${{ github.workspace }}/system_files/desktop/usr/share/ublue-os/docs/html"
           mkdir -p $DOCS_DIR
           cd $(mktemp -d)
           gh run download --repo=$docs_repo -n github-pages

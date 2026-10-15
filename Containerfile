@@ -49,7 +49,7 @@ ARG VERSION_TAG="${VERSION_TAG}"
 ARG VERSION_PRETTY="${VERSION_PRETTY}"
 
 # Keep the shared Bazzite configuration in the common stage.
-COPY system_files/desktop/shared/ /
+COPY system_files/desktop/ /
 # Mark inherited Universal Blue documentation for component-aware tooling.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/label-ublue-docs
@@ -200,7 +200,7 @@ ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-ogc}"
 
 # Fetch NVIDIA driver
 # Copy NVIDIA driver configuration files into root.
-COPY system_files/nvidia/shared/ /
+COPY system_files/nvidia/ /
 
 # Remove everything that doesn't work well with NVIDIA, unset skip_if_unavailable option if was set beforehand
 RUN --mount=type=cache,dst=/var/cache \
