@@ -61,7 +61,11 @@ forbid_rpms() {
 # Require every listed repo id to be known to dnf5.
 require_repos() {
     local available id
-    available="$(dnf5 repo info --all --json 2>/dev/null | jq -r '.[].id' || true)"
+    available="$(dnf5 repo info --all --json | jq -r '.[].id' || true)"
+    if [[ -z "$available" ]]; then
+        fail "dnf5 repo query returned nothing; cannot verify repos"
+        return
+    fi
     for id in "$@"; do
         if grep -qxF "$id" <<<"$available"; then
             pass "repo known: $id"
@@ -89,6 +93,10 @@ verify_kernel() {
     fi
 
     require_rpms kernel-core kernel-modules kernel-devel
+
+    # install-kmods only warns (exit 0) when no RPMs match, so a missing
+    # nct6687d payload is only detectable here.
+    require_rpms kmod-nct6687d nct6687d
 
     actual="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}' 2>/dev/null || true)"
     actual="${actual%.x86_64}"
@@ -143,6 +151,7 @@ verify_final() {
     # Negative guards: fonts and waydroid must never reach the published image.
     forbid_rpms \
         nerd-fonts fira-code-fonts lato-fonts google-noto-sans-cjk-fonts twitter-twemoji-fonts \
+        google-roboto-fonts google-roboto-mono-fonts \
         waydroid waydroid-nvidia obs-studio-plugin-vkcapture-hook-libs
 
     # Device-specific trim: kernel modules for absent hardware must not reappear.
@@ -160,7 +169,7 @@ verify_final() {
     fi
 
     info=/usr/share/ublue-os/image-info.json
-    if [[ -f "$info" ]] && jq -e '."image-name" and ."image-branch" and ."image-ref"' "$info" >/dev/null; then
+    if [[ -f "$info" ]] && jq -e '(."image-name" | strings | length > 0) and (."image-branch" | strings | length > 0) and (."image-ref" | strings | length > 0)' "$info" >/dev/null; then
         pass "image-info.json populated: $info"
     else
         fail "image-info.json missing or incomplete: $info"
