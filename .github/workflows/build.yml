@@ -21,7 +21,7 @@ env:
   REPO_OWNER: ${{ github.repository_owner }}
   FEDORA_VERSION: "44"
   KERNEL_FLAVOR: "ogc"
-  KERNEL_VERSION: "7.2.9-ogc4.1.fc44"
+  KERNEL_VERSION: "7.2.7-ogc1.1.fc44"
   IMAGE_NAME: "bazzfin-nvidia"
   PULL_REGISTRY: "ghcr.io/ublue-os"
 
