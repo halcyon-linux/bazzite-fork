@@ -23,7 +23,6 @@ IMAGE_NAME=SKIP_PACKAGE_INSTALL \
 rm -f /usr/share/vulkan/icd.d/nouveau_icd.*.json
 ln -sfn libnvidia-ml.so.1 /usr/lib64/libnvidia-ml.so
 
-# Restore the build repository settings and install NVIDIA's Waydroid package.
+# Restore the build repository settings.
 dnf5 config-manager setopt 'terra-mesa'.enabled=0
 dnf5 -y copr disable ublue-os/staging
-dnf5 -y swap --repo terra-extras waydroid waydroid-nvidia

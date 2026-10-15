@@ -26,7 +26,7 @@ systemctl enable nvidia-powerd.service || echo "Warning: failed to enable nvidia
 systemctl disable nvidia-persistenced.service 2>/dev/null || true
 systemctl enable ublue-nvidia-flatpak-runtime-sync.service || echo "Warning: failed to enable ublue-nvidia-flatpak-runtime-sync.service" >&2
 systemctl enable ublue-nvidia-flatpak-runtime-verify.service || echo "Warning: failed to enable ublue-nvidia-flatpak-runtime-verify.service" >&2
-# waydroid-nvidia is installed above; keep its container off until the user starts it.
+# Keep Waydroid's container off until the user starts it.
 systemctl disable waydroid-container.service 2>/dev/null || true
 
 dnf5 config-manager setopt skip_if_unavailable=1
