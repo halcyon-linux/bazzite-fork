@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# btop replaces htop, and uupd replaces the upstream update service.
-for pkg in htop ublue-os-update-services; do
+# btop replaces htop, uupd replaces the upstream update service, and the base
+# image's CJK font isn't needed on this device (nothing requires or recommends
+# it, so removal doesn't cascade).
+for pkg in htop ublue-os-update-services google-noto-sans-cjk-fonts; do
     if rpm -q "$pkg" >/dev/null 2>&1; then
         dnf5 -y remove "$pkg"
     fi
