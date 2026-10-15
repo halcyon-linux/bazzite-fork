@@ -42,10 +42,12 @@ dnf5 versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel
     /tmp/rpms/{common,kmods}/*xone*.rpm \
     /tmp/rpms/{common,kmods}/*wl*.rpm
 
+# Take only the kmod-evdi from akmods-extra: the libevdi copy bundled there can
+# lag fedora-multimedia, and dnf refuses to install both versions at once.
 /ctx/install-kmods \
     /tmp/rpms/{extra,kmods-extra}/*zenergy*.rpm \
     /tmp/rpms/{extra,kmods-extra}/*gcadapter*.rpm \
-    /tmp/rpms/{extra,kmods-extra}/*evdi*.rpm \
+    /tmp/rpms/kmods-extra/*evdi*.rpm \
     /tmp/rpms/{extra,kmods-extra}/*kvmfr*.rpm \
     /tmp/rpms/{extra,kmods-extra}/*new-lg4ff*.rpm \
     /tmp/rpms/{extra,kmods-extra}/*hid-tmff2*.rpm \
