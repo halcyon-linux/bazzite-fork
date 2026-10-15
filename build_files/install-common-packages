@@ -30,14 +30,12 @@ common_packages=(
     libadwaita
     bees
     xwininfo
-    usbip
     compsize
     # ryzenadj
     input-remapper
     libinput-utils
     i2c-tools
     lm_sensors
-    iio-sensor-proxy
     # fw-ectool
     # fw-fanctrl
     # framework-system

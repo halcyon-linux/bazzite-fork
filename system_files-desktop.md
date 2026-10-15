@@ -43,6 +43,7 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
 3. `etc/systemd/system/beesd@.service.d/override.conf` — byte-identical duplicate of `bees-timeout.conf`.
 4. `usr/share/polkit-1/rules.d/90-corectrl.rules` — CoreCtrl isn't installed by this fork.
 5. **Offline docs bundle** (per maintainer decision): `usr/share/ublue-os/docs/serve`, the CI "Download offline docs" step, and `build_files/label-ublue-docs` — this bundle was also the only source of the Roboto/Roboto Mono webfonts.
+6. **Device-specific trim** (per maintainer decision): the akmods install list was reduced to `nct6687d` only (MSI Z790 sensor chip); removed `usr/lib/modprobe.d/fw-charge-control.conf`, `usr/lib/modprobe.d/new-lg4ff.conf`, `usr/lib/udev/rules.d/90-dolphin-motion.rules`; dropped the `iio-sensor-proxy`, `usbip`, and `obs-studio-plugin-vkcapture-hook-libs` packages.
 
 Remaining waydroid mentions left in place deliberately (all guarded or inert): the `waydroid-container.service`
 disable no-op in `build_files/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
@@ -154,12 +155,12 @@ Privileged/background helpers. 20 files.
 | File | Why it exists | Needed? |
 |---|---|---|
 | `usr/lib/udev/rules.d/60-schedulers.rules` | I/O scheduler policy: kyber for SSD/NVMe, bfq for SD/HDD | ✅ |
-| `usr/lib/udev/rules.d/90-dolphin-motion.rules` | `uaccess` tag for motion-sensor input devices (Dolphin emulator Wiimote gyro etc.) | ✅ |
+| `usr/lib/udev/rules.d/90-dolphin-motion.rules` | `uaccess` tag for motion-sensor input devices | ❌ removed (device trim: no motion-sensor devices) |
 | `usr/lib/sysusers.d/plugdev.conf` | Creates the `plugdev` group (46) that some device-access udev rules reference | ✅ |
 | `usr/lib/tmpfiles.d/bazzite-libvirt.conf` | Persistent correct perms for `/var/log/libvirt` | ⚠️ virt |
 | `usr/lib/tmpfiles.d/incus-workaround.conf` | Runtime copies backing the incus bind-mount workaround | ✅ |
-| `usr/lib/modprobe.d/fw-charge-control.conf` | Enables Framework charge-control probing in `cros_charge_control` | ✅ |
-| `usr/lib/modprobe.d/new-lg4ff.conf` | Blacklists stock `hid_logitech` so the `new-lg4ff` kmod (built via akmods) takes over | ✅ |
+| `usr/lib/modprobe.d/fw-charge-control.conf` | Framework charge-control probing | ❌ removed (device trim: not a Framework) |
+| `usr/lib/modprobe.d/new-lg4ff.conf` | Blacklisted stock `hid_logitech` so the `new-lg4ff` kmod could take over | ❌ removed (device trim: no wheel, kmod dropped) |
 | `usr/lib/modules-load.d/wine-ntsync.conf` | Loads the `ntsync` module (Wine NT synchronization primitives) | ✅ |
 | `usr/lib/dracut/dracut.conf.d/80-vfio.conf` | Force-loads `vfio*` in initramfs (GPU passthrough setups) | ⚠️ harmless default |
 

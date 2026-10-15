@@ -110,7 +110,7 @@ verify_repos() {
         fedora updates \
         fedora-multimedia \
         terra terra-extras terra-mesa \
-        tailscale \
+        tailscale-stable \
         'copr:copr.fedorainfracloud.org:ublue-os:bazzite' \
         'copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib' \
         'copr:copr.fedorainfracloud.org:ublue-os:staging' \
@@ -143,7 +143,13 @@ verify_final() {
     # Negative guards: fonts and waydroid must never reach the published image.
     forbid_rpms \
         nerd-fonts fira-code-fonts lato-fonts google-noto-sans-cjk-fonts twitter-twemoji-fonts \
-        waydroid waydroid-nvidia
+        waydroid waydroid-nvidia obs-studio-plugin-vkcapture-hook-libs
+
+    # Device-specific trim: kernel modules for absent hardware must not reappear.
+    forbid_rpms \
+        kmod-zenergy kmod-ryzen_smu kmod-wl kmod-openrazer kmod-xone kmod-gcadapter_oc \
+        kmod-evdi kmod-kvmfr kmod-new-lg4ff kmod-hid-tmff2 kmod-t150-driver \
+        kmod-hid-fanatecff kmod-sc0710 kmod-system76-driver kmod-system76-io kmod-v4l2loopback
 
     # The offline docs bundle was removed on purpose (it was the only carrier
     # of the Roboto/Roboto Mono webfonts).
