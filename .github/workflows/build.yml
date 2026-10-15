@@ -21,15 +21,15 @@ env:
   REPO_OWNER: ${{ github.repository_owner }}
   FEDORA_VERSION: "44"
   KERNEL_FLAVOR: "ogc"
-  KERNEL_VERSION: "7.2.7-ogc1.1.fc44"
-  ARCH: "x86_64"
-  IMAGE_NAME: "bazzite-nvidia"
+  KERNEL_VERSION: "7.2.9-ogc4.1.fc44"
+  IMAGE_NAME: "bazzfin-nvidia"
   PULL_REGISTRY: "ghcr.io/ublue-os"
 
 jobs:
   build:
     name: Build and push
     runs-on: ubuntu-26.04
+    timeout-minutes: 90
 
     permissions:
       contents: read
@@ -101,7 +101,6 @@ jobs:
           KERNEL_VERSION=${KERNEL_VERSION}
           VERSION_TAG=${{ steps.labels.outputs.tag }}
           VERSION_PRETTY=${{ steps.labels.outputs.pretty }}
-          ARCH=${ARCH}
           EOF
 
       # Build image using buildah and save it to raw-img
@@ -126,7 +125,7 @@ jobs:
             org.opencontainers.image.licenses=Apache-2.0
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.title=Bazzite NVIDIA
+            org.opencontainers.image.title=Bazzfin NVIDIA
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.url=https://github.com/${{ github.repository }}
         run: |

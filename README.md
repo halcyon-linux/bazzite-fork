@@ -1,19 +1,19 @@
 # Bazzite NVIDIA
 
-This fork currently builds and publishes one image: `bazzite-nvidia`. Its final image is based on Universal Blue `base-main`, uses the OGC kernel, retains shared Bazzite gaming and system configuration, and installs the NVIDIA open kernel modules (`nvidia-open`).
+This fork currently builds and publishes one image: `bazzfin-nvidia`. It is based on Universal Blue `base-main`, uses the OGC kernel, retains shared Bazzite gaming and system configuration, and installs the NVIDIA open kernel modules (`nvidia-open`).
 
-The image does not currently include a desktop environment or compositor. Hyprland is planned as a later addition. The `bazzite` stage in the Containerfile is an internal build stage; only `bazzite-nvidia` is published.
+The image does not currently include a desktop environment or compositor. Hyprland is planned as a later addition.
 
 ## Published image
 
 ```text
-ghcr.io/halcyon-linux/bazzite-nvidia:stable
+ghcr.io/halcyon-linux/bazzfin-nvidia:stable
 ```
 
 For an existing bootc or rpm-ostree system, rebase to the image with:
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/halcyon-linux/bazzite-nvidia:stable
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/halcyon-linux/bazzfin-nvidia:stable
 ```
 
 ## Build locally
@@ -28,7 +28,7 @@ The Containerfile starts from `base-main`, installs the shared gaming and system
 
 ## Workflows
 
-- `.github/workflows/build.yml` builds and publishes `bazzite-nvidia` on every push to `main` and on a daily schedule.
+- `.github/workflows/build.yml` builds and publishes `bazzfin-nvidia` on every push to `main` and on a daily schedule.
 - `.github/workflows/clean.yml` removes old versions of that package.
 
 ## Upstream references

@@ -2,7 +2,7 @@
 
 set -eoux pipefail
 
-IMAGE_NAME="${IMAGE_NAME:-bazzite-nvidia}"
+IMAGE_NAME="${IMAGE_NAME:-bazzfin-nvidia}"
 IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 IMAGE_BRANCH="${IMAGE_BRANCH:-stable}"
 VERSION_TAG="${VERSION_TAG:-}"

@@ -27,12 +27,12 @@ Options:
 Examples:
   $(basename "$0") list stable
   $(basename "$0") rebase testing
-  $(basename "$0") rebase bazzite-nvidia:stable
+  $(basename "$0") rebase bazzfin-nvidia:stable
 
 For help: https://discord.bazzite.gg"
 
 VARIANTS=(
-  "bazzite-nvidia"
+  "bazzfin-nvidia"
 )
 
 # Utility functions
@@ -106,10 +106,10 @@ rebase_to() {
   case "$target" in
     ostree-*) ;;
     *:*)
-      full_ref="ostree-image-signed:docker://ghcr.io/ublue-os/$target"
+      full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$target"
       ;;
     *)
-      full_ref="ostree-image-signed:docker://ghcr.io/ublue-os/$DEFAULT_IMAGE:$target"
+      full_ref="ostree-image-signed:docker://ghcr.io/$DEFAULT_PROVIDER/$DEFAULT_IMAGE:$target"
       ;;
   esac
   
@@ -243,7 +243,7 @@ rebase() {
   
   if [[ -z "$target" ]]; then
     echo >&2 "Usage: rebase TARGET"
-    echo >&2 "Examples: rebase stable, rebase bazzite-nvidia:testing"
+    echo >&2 "Examples: rebase stable, rebase bazzfin-nvidia:testing"
     return 1
   fi
   

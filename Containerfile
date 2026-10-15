@@ -3,27 +3,26 @@
 # gaming image with the NVIDIA open kernel modules; bootc and rpm-ostree provide staged updates
 # and rollback.
 # Keep the Containerfile build: the image uses multi-stage akmods inputs, bind mounts,
-# package swaps, and one published NVIDIA image built from an internal common stage.
+# and package swaps to build the single published NVIDIA image.
 # Upstream Fedora release number
 ARG FEDORA_VERSION="${FEDORA_VERSION:-44}"
-# CPU target architecture
-ARG ARCH="${ARCH:-x86_64}"
 
 # Full registry URL to the upstream Universal Blue base image
 ARG BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/base-main:${FEDORA_VERSION}}"
 # Kernel modification flavor (ogc = Open Gaming Collective / fsync gaming kernel)
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-ogc}"
 # Exact kernel version matching pre-built akmods images
-ARG KERNEL_VERSION="${KERNEL_VERSION:-7.2.7-ogc1.1.fc${FEDORA_VERSION}}"
+ARG KERNEL_VERSION="${KERNEL_VERSION:-7.2.9-ogc4.1.fc${FEDORA_VERSION}}"
 
-# Pull pre-compiled out-of-tree hardware kernel modules (xone, v4l2loopback, openrazer, kvmfr)
+# Pull the pre-compiled kernel and akmods rpms for the pinned kernel version
 FROM ghcr.io/ublue-os/akmods:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods
-# Pull extra hardware kernel modules (ryzen_smu, evdi, racing wheel drivers)
+# Pull the akmods-extra trees (device-specific kmods and their userspace parts;
+# only nct6687d is installed, see build_files/install-kernel-akmods)
 FROM ghcr.io/ublue-os/akmods-extra:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods-extra
-# Pull pre-compiled NVIDIA proprietary/open drivers matching this specific kernel
+# Pull the NVIDIA open driver rpms matching the pinned kernel
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods-nvidia
-# Pull the latest pre-packaged Homebrew standalone root
-FROM ghcr.io/ublue-os/brew:latest AS brew
+# Pull the pre-packaged Homebrew standalone root (digest-pinned)
+FROM ghcr.io/ublue-os/brew:latest@sha256:5bdf54dc7c21c22db29df6550e3711788719c5123549ea6dc5645d5af47795e3 AS brew
 
 # Build context helper: isolates build scripts so they can be bind-mounted without polluting image layers
 FROM scratch AS ctx
@@ -33,10 +32,11 @@ COPY build_files /
 # BAZZITE BASE
 ################
 
-FROM ${BASE_IMAGE} AS bazzite
+FROM ${BASE_IMAGE} AS bazzfin-nvidia
+# hadolint shell=bash
 
 # Image name identifier
-ARG IMAGE_NAME="${IMAGE_NAME:-bazzite-nvidia}"
+ARG IMAGE_NAME="${IMAGE_NAME:-bazzfin-nvidia}"
 # Image vendor namespace
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 # Image release branch (stable, testing, unstable)
@@ -50,7 +50,7 @@ ARG VERSION_PRETTY="${VERSION_PRETTY}"
 # Kernel version (redeclared so RUN steps can verify against it; empty on local builds)
 ARG KERNEL_VERSION
 
-# Keep the shared Bazzite configuration in the common stage.
+# Keep the shared Bazzite configuration in the image root.
 COPY system_files/desktop/ /
 
 # Use the standalone files exposed by the Homebrew image's /system_files tree.
@@ -70,10 +70,8 @@ RUN --mount=type=cache,dst=/var/cache \
     KERNEL_VERSION="${KERNEL_VERSION}" /ctx/verify kernel && \
     /ctx/cleanup
 
-
 # Configure repositories and package version locks used by later build steps.
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -83,7 +81,6 @@ RUN --mount=type=cache,dst=/var/cache \
 
 # Install the patched gaming stack and its supporting codecs.
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -92,7 +89,6 @@ RUN --mount=type=cache,dst=/var/cache \
 
 # Remove packages superseded by image tooling.
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -110,7 +106,6 @@ RUN --mount=type=cache,dst=/var/cache \
 
 # Install Steam, Lutris, gaming middleware, and Winetricks.
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -121,7 +116,6 @@ RUN --mount=type=cache,dst=/var/cache \
 
 # Install ujust-picker from the latest GitHub release.
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -129,9 +123,8 @@ RUN --mount=type=cache,dst=/var/cache \
     /ctx/install-ujust-picker && \
     /ctx/cleanup
 
-# ublue-os-media-automount-udev, mount non-removable device partitions automatically under /media/media-automount/
+# Mount non-removable device partitions automatically under /media/media-automount/ (ublue-os-media-automount-udev).
 RUN --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -143,8 +136,8 @@ RUN --mount=type=cache,dst=/var/cache \
 COPY system_files/overrides/ /
 
 # This pass applies shared defaults after packages and overlays are present, disables build-only
-# repositories, and configures the services shipped in the image. Metadata, initramfs,
-# and account finalization run last so they include all preceding changes.
+# repositories, and configures the services shipped in the image. Metadata, initramfs, and account
+# finalization run here and once more after the NVIDIA section, so the last pass includes everything.
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/configure-desktop-integration
 
@@ -176,33 +169,20 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/finalize
 
-########################
-# PUBLISHED NVIDIA IMAGE
-########################
-
-FROM bazzite AS bazzite-nvidia
-# hadolint shell=bash
+#############################
+# NVIDIA DRIVER INTEGRATION
+#############################
 
 # Add NVIDIA driver packages matched to the kernel artifacts.
 
-# NVIDIA image name identifier
-ARG IMAGE_NAME="${IMAGE_NAME:-bazzite-nvidia}"
-# NVIDIA image vendor namespace
-ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
-# NVIDIA image release branch
-ARG IMAGE_BRANCH="${IMAGE_BRANCH:-stable}"
-# Build version tag
-ARG VERSION_TAG="${VERSION_TAG}"
-# Formatted user-facing version string
-ARG VERSION_PRETTY="${VERSION_PRETTY}"
-# Kernel modification flavor
+# Kernel modification flavor (read by build-initramfs)
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-ogc}"
 
 # Fetch NVIDIA driver
 # Copy NVIDIA driver configuration files into root.
 COPY system_files/nvidia/ /
 
-# Remove everything that doesn't work well with NVIDIA, unset skip_if_unavailable option if was set beforehand
+# Remove everything that doesn't work well with NVIDIA.
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \

@@ -57,4 +57,4 @@ rm -rf \
     /etc/shadow- \
     /etc/gshadow- \
     /etc/subuid- \
-    /etc/subgid- \
+    /etc/subgid-
