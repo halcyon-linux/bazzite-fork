@@ -1,0 +1,211 @@
+#!/usr/bin/bash
+
+set -Eeuo pipefail
+
+# Build-time verification for the bazzite-nvidia image.
+# Each group asserts the invariants of one build stage. The Containerfile
+# invokes it immediately after the stage it verifies, so failures point at
+# the step that broke them instead of surfacing in the final image (or worse,
+# on user machines).
+#
+# Usage: /ctx/verify <kernel|repos|packages|nvidia|final>
+
+group="${1:-}"
+case "$group" in
+kernel | repos | packages | nvidia | final) ;;
+*)
+    printf 'Usage: %s <kernel|repos|packages|nvidia|final>\n' "$0" >&2
+    exit 2
+    ;;
+esac
+
+echo "::group::Executing verify (${group})"
+trap 'echo "::endgroup::"' EXIT
+
+declare -a failures=()
+
+fail() {
+    printf 'FAIL: %s\n' "$*" >&2
+    failures+=("$*")
+}
+
+pass() {
+    printf 'OK: %s\n' "$*"
+}
+
+# Require every listed package to be installed.
+require_rpms() {
+    local pkg
+    for pkg in "$@"; do
+        if rpm -q "$pkg" >/dev/null 2>&1; then
+            pass "package installed: $pkg"
+        else
+            fail "package missing: $pkg"
+        fi
+    done
+}
+
+# Require every listed package to be absent (guard rails for things this
+# image must never ship).
+forbid_rpms() {
+    local pkg
+    for pkg in "$@"; do
+        if rpm -q "$pkg" >/dev/null 2>&1; then
+            fail "forbidden package installed: $pkg"
+        else
+            pass "package absent: $pkg"
+        fi
+    done
+}
+
+# Require every listed repo id to be known to dnf5.
+require_repos() {
+    local available id
+    available="$(dnf5 repo info --all --json 2>/dev/null | jq -r '.[].id' || true)"
+    for id in "$@"; do
+        if grep -qxF "$id" <<<"$available"; then
+            pass "repo known: $id"
+        else
+            fail "repo not found: $id"
+        fi
+    done
+}
+
+verify_kernel() {
+    local -a dirs
+    local kver_dir actual expected
+
+    mapfile -t dirs < <(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+    if [[ ${#dirs[@]} -eq 1 ]]; then
+        kver_dir="${dirs[0]}"
+        pass "exactly one kernel modules dir: $kver_dir"
+        if [[ -n "$(find "$kver_dir" -type f -print -quit)" ]]; then
+            pass "kernel modules dir is populated"
+        else
+            fail "kernel modules dir is empty: $kver_dir"
+        fi
+    else
+        fail "expected exactly one kernel modules dir, found ${#dirs[@]}: ${dirs[*]:-none}"
+    fi
+
+    require_rpms kernel-core kernel-modules kernel-devel
+
+    actual="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}' 2>/dev/null || true)"
+    actual="${actual%.x86_64}"
+    actual="${actual%.aarch64}"
+    expected="${KERNEL_VERSION:-}"
+    if [[ -n "$expected" ]]; then
+        if [[ "$actual" == "$expected" ]]; then
+            pass "installed kernel matches KERNEL_VERSION: $actual"
+        else
+            fail "kernel mismatch: installed=${actual} expected=${expected}"
+        fi
+    else
+        pass "KERNEL_VERSION not provided; skipped version comparison (installed=${actual:-unknown})"
+    fi
+}
+
+verify_repos() {
+    require_repos \
+        fedora updates \
+        fedora-multimedia \
+        terra terra-extras terra-mesa \
+        tailscale \
+        'copr:copr.fedorainfracloud.org:ublue-os:bazzite' \
+        'copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib' \
+        'copr:copr.fedorainfracloud.org:ublue-os:staging' \
+        'copr:copr.fedorainfracloud.org:ublue-os:packages'
+}
+
+verify_packages() {
+    require_rpms \
+        steam lutris bazaar uupd btop fastfetch snapper bees \
+        input-remapper tailscale cockpit-system yad btrfs-assistant kernel-tools
+}
+
+verify_nvidia() {
+    require_rpms egl-wayland egl-wayland2
+    if [[ -n "$(find /usr/lib/modules -name 'nvidia.ko*' -print -quit 2>/dev/null)" ]]; then
+        pass "nvidia kernel module present"
+    else
+        fail "nvidia kernel module not found under /usr/lib/modules"
+    fi
+    if [[ -e /usr/lib64/libnvidia-ml.so && -e /usr/lib64/libnvidia-ml.so.1 ]]; then
+        pass "NVML library and symlink present"
+    else
+        fail "NVML library or symlink missing (/usr/lib64/libnvidia-ml.so[.1])"
+    fi
+}
+
+verify_final() {
+    local info kver
+
+    # Negative guards: fonts and waydroid must never reach the published image.
+    forbid_rpms \
+        nerd-fonts fira-code-fonts lato-fonts google-noto-sans-cjk-fonts twitter-twemoji-fonts \
+        waydroid waydroid-nvidia
+
+    # The offline docs bundle was removed on purpose (it was the only carrier
+    # of the Roboto/Roboto Mono webfonts).
+    if [[ -e /usr/share/ublue-os/docs ]]; then
+        fail "offline docs bundle present: /usr/share/ublue-os/docs"
+    else
+        pass "offline docs bundle absent"
+    fi
+
+    info=/usr/share/ublue-os/image-info.json
+    if [[ -f "$info" ]] && jq -e '."image-name" and ."image-branch" and ."image-ref"' "$info" >/dev/null; then
+        pass "image-info.json populated: $info"
+    else
+        fail "image-info.json missing or incomplete: $info"
+    fi
+    if jq -e '."image-ref" | startswith("ostree-image-signed:docker://ghcr.io/")' "$info" >/dev/null 2>&1; then
+        pass "image-ref uses the signed ghcr.io scheme"
+    else
+        fail "image-ref is not the signed ghcr.io reference"
+    fi
+
+    # The initramfs must exist for the installed kernel.
+    kver="$(dnf5 repoquery --installed --queryformat='%{evr}.%{arch}' kernel 2>/dev/null | head -n1 || true)"
+    if [[ -n "$kver" && -s "/usr/lib/modules/$kver/initramfs.img" ]]; then
+        pass "initramfs present: /usr/lib/modules/$kver/initramfs.img"
+    else
+        fail "initramfs missing for kernel '${kver:-<none>}'"
+    fi
+
+    # Downloaded tooling binaries must be present and runnable.
+    if [[ -x /usr/bin/ujust-picker ]]; then
+        pass "ujust-picker is installed and executable"
+    else
+        fail "ujust-picker missing or not executable"
+    fi
+    if [[ -x /usr/bin/winetricks ]]; then
+        pass "winetricks is installed and executable"
+    else
+        fail "winetricks missing or not executable"
+    fi
+
+    # The generated justfile (ujust recipes) must parse with all imports.
+    if ! command -v just >/dev/null 2>&1; then
+        fail "just binary not found; cannot validate ujust justfile"
+    elif just --unstable --summary -f /usr/share/ublue-os/justfile >/dev/null 2>&1; then
+        pass "ujust justfile parses"
+    else
+        fail "ujust justfile failed to parse"
+    fi
+}
+
+case "$group" in
+kernel) verify_kernel ;;
+repos) verify_repos ;;
+packages) verify_packages ;;
+nvidia) verify_nvidia ;;
+final) verify_final ;;
+esac
+
+if ((${#failures[@]})); then
+    printf '\nverify (%s): %d check(s) failed\n' "$group" "${#failures[@]}" >&2
+    exit 1
+fi
+
+printf '\nverify (%s): all checks passed\n' "$group"

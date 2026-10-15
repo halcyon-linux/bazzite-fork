@@ -47,6 +47,8 @@ ARG FEDORA_VERSION="${FEDORA_VERSION:-44}"
 ARG VERSION_TAG="${VERSION_TAG}"
 # Formatted user-facing version string
 ARG VERSION_PRETTY="${VERSION_PRETTY}"
+# Kernel version (redeclared so RUN steps can verify against it; empty on local builds)
+ARG KERNEL_VERSION
 
 # Keep the shared Bazzite configuration in the common stage.
 COPY system_files/desktop/ /
@@ -67,6 +69,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/install-kernel-akmods && \
+    KERNEL_VERSION="${KERNEL_VERSION}" /ctx/verify kernel && \
     /ctx/cleanup
 
 
@@ -77,6 +80,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/setup-repositories && \
+    /ctx/verify repos && \
     /ctx/cleanup
 
 # Install the patched gaming stack and its supporting codecs.
@@ -114,6 +118,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
     /ctx/install-steam-lutris && \
+    /ctx/verify packages && \
     /ctx/cleanup
 
 # Install ujust-picker from the latest GitHub release.
@@ -215,6 +220,7 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=secret,id=GITHUB_TOKEN \
     /ctx/install-nvidia-driver && \
+    /ctx/verify nvidia && \
     /ctx/cleanup
 
 # Cleanup & Finalize
@@ -236,5 +242,9 @@ RUN --mount=type=cache,dst=/var/cache \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/finalize
+
+# Verify the published image before the final lint gate.
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    /ctx/verify final
 
 RUN --mount=type=tmpfs,target=/run --network=none bootc container lint
