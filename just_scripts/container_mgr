@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 valid_managers=(
-    docker
     podman
     podman-remote
 )
@@ -16,13 +15,11 @@ if [[ -n "${CONTAINER_MGR:-}" ]]; then
     done
     printf 'Invalid container manager: %s\n' "$CONTAINER_MGR" >&2
     exit 1
-elif command -v docker >/dev/null 2>&1; then
-    echo docker
 elif command -v podman >/dev/null 2>&1; then
     echo podman
 elif command -v podman-remote >/dev/null 2>&1; then
     echo podman-remote
 else
-    echo "No valid container manager found (docker, podman, podman-remote)." >&2
+    echo "No valid container manager found (podman, podman-remote)." >&2
     exit 1
 fi

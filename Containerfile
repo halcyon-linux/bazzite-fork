@@ -14,7 +14,7 @@ ARG BASE_IMAGE="${BASE_IMAGE:-ghcr.io/ublue-os/base-main:${FEDORA_VERSION}}"
 # Kernel modification flavor (ogc = Open Gaming Collective / fsync gaming kernel)
 ARG KERNEL_FLAVOR="${KERNEL_FLAVOR:-ogc}"
 # Exact kernel version matching pre-built akmods images
-ARG KERNEL_VERSION="${KERNEL_VERSION:-7.0.9-ogc3.2.fc${FEDORA_VERSION}.${ARCH}}"
+ARG KERNEL_VERSION="${KERNEL_VERSION:-7.2.7-ogc1.1.fc${FEDORA_VERSION}}"
 
 # Pull pre-compiled out-of-tree hardware kernel modules (xone, v4l2loopback, openrazer, kvmfr)
 FROM ghcr.io/ublue-os/akmods:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods

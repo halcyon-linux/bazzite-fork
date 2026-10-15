@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 set -euo pipefail
 container_mgr=(
-    docker
     podman
     podman-remote
 )

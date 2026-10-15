@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 container_mgr=(
-    docker
     podman
     podman-remote
 )
