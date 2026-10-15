@@ -6,7 +6,7 @@ screens:
     actions:
       - id: "bazzite-documentation"
         title: "Read the Bazzite Docs"
-        description: "New to Bazzite or Linux? Check out our helpful documentation. An offline version can be accessed by searching for ‘Documentation’ in your app menu."
+        description: "New to Bazzite or Linux? Check out our helpful documentation."
         default: false
         script: "xdg-open https://docs.bazzite.gg/"
       - id: "bazaar"

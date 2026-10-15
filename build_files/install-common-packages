@@ -26,11 +26,6 @@ common_packages=(
     ublue-os-selinux-workarounds
     bazzite-updater
     ScopeBuddy
-    # twitter-twemoji-fonts
-    # google-noto-sans-cjk-fonts
-    # lato-fonts
-    # fira-code-fonts
-    # nerd-fonts
     python3-pip
     libadwaita
     bees

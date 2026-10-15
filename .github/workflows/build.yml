@@ -51,20 +51,6 @@ jobs:
         id: repo_owner_case
         run: echo "lowercase=${REPO_OWNER,,}" >> "$GITHUB_OUTPUT"
 
-      # Prepare offline documentation; non-fatal if the download fails.
-      - name: Download offline docs
-        id: download_offline_docs
-        continue-on-error: true
-        env:
-          docs_repo: ublue-os/docs.bazzite.gg
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          DOCS_DIR="${{ github.workspace }}/system_files/desktop/usr/share/ublue-os/docs/html"
-          mkdir -p $DOCS_DIR
-          cd $(mktemp -d)
-          gh run download --repo=$docs_repo -n github-pages
-          tar -xC "$DOCS_DIR" -f artifact.tar
-
       - name: Define image variables
         id: base
         run: |

@@ -42,6 +42,7 @@ Since this fork currently ships **no desktop session and no waydroid**, some fil
 2. `usr/bin/edit` symlink + `etc/profile.d/ms-edit-default-editor.sh` — `msedit` is commented out of the package list.
 3. `etc/systemd/system/beesd@.service.d/override.conf` — byte-identical duplicate of `bees-timeout.conf`.
 4. `usr/share/polkit-1/rules.d/90-corectrl.rules` — CoreCtrl isn't installed by this fork.
+5. **Offline docs bundle** (per maintainer decision): `usr/share/ublue-os/docs/serve`, the CI "Download offline docs" step, and `build_files/label-ublue-docs` — this bundle was also the only source of the Roboto/Roboto Mono webfonts.
 
 Remaining waydroid mentions left in place deliberately (all guarded or inert): the `waydroid-container.service`
 disable no-op in `build_files/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
@@ -192,7 +193,7 @@ Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti.
 | `ublue-os/motd/env` + `motd/template.md` | MOTD banner data (image/ref, Greenboot health, random tip) and its template | ✅ |
 | `ublue-os/topgrade.toml` | Main topgrade config: system (rpm-ostree) + brew + firmware + custom commands, assume-yes | ⚠️ |
 | `ublue-os/bbrew.png` | Icon for the bbrew launcher | ⚠️ |
-| `ublue-os/docs/serve` | Serves the downloadable offline docs (`python -m http.server`) and opens a browser | ✅ (CI downloads docs) |
+| `ublue-os/docs/serve` | Served the downloadable offline docs (`python -m http.server`) | ❌ removed (offline-docs feature dropped) |
 | `ublue-os/bazaar/blocklist.yaml` | Hides from Bazaar what's already provided/replaced (Steam, Lutris, editors; DE-specific apps per session) | ✅ |
 | `ublue-os/bazaar/content.yaml` | Curated Bazaar storefront (banner rows for gaming/music/office/streaming/utilities) | ✅ |
 | `ublue-os/bazaar/{gaming,music,office,streaming,utilities}.jxl` | Banner images used by `content.yaml` | ✅ |

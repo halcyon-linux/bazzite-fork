@@ -50,9 +50,6 @@ ARG VERSION_PRETTY="${VERSION_PRETTY}"
 
 # Keep the shared Bazzite configuration in the common stage.
 COPY system_files/desktop/ /
-# Mark inherited Universal Blue documentation for component-aware tooling.
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    /ctx/label-ublue-docs
 
 # Use the standalone files exposed by the Homebrew image's /system_files tree.
 COPY --from=brew /system_files/ /tmp/brew_files/
