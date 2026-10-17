@@ -4,7 +4,7 @@ ConditionUser=!@system
 
 [Service]
 Type=simple
-ExecStart=/usr/libexec/bazzite-user-setup
+ExecStart=/usr/bin/halcyon-user-setup
 
 [Install]
 WantedBy=default.target

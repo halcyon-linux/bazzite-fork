@@ -6,7 +6,7 @@ Before=systemd-user-sessions.service jupiter-biosupdate.service jupiter-controll
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/libexec/bazzite-hardware-setup
+ExecStart=/usr/bin/halcyon-hardware-setup
 
 [Install]
 WantedBy=multi-user.target

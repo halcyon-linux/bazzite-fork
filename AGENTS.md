@@ -63,6 +63,7 @@ Each package-installing `RUN` ends with `/ctx/shared/cleanup`. Keep that.
 - Repo priorities and excludes live in `packages/setup-repositories`. Build-only repos are disabled again in `system/configure-system-policy`. A new repo needs changes in both.
 - Kernel, Mesa, bluez, Xwayland, and NetworkManager are `dnf5 versionlock`ed. Don't unlock them as a side effect of another change.
 - Enable and disable services in `system/configure-system-services`. NVIDIA services are handled in `nvidia/finalize-nvidia`.
+- Runtime helpers are `halcyon-*` RPMs from the `aahsnr-work/python-packages` Copr (sources: the `halcyon-linux/python-packages` repo). `install-common-packages` must install them before `configure-system-services`/`finalize-nvidia` enable their units.
 
 **ujust recipes**
 - Recipes live in `system_files/desktop/usr/share/ublue-os/just/`. A new `.just` file must be added to the list in `build_files/just/import-bazzite-justfiles`.
@@ -72,14 +73,14 @@ Each package-installing `RUN` ends with `/ctx/shared/cleanup`. Keep that.
 
 - **Kernel version:** `KERNEL_VERSION` is set in both `Containerfile` and `.github/workflows/build.yml`. Matching tags must exist for `akmods`, `akmods-extra`, and `akmods-nvidia-open`.
 - **Fedora version:** set in `Containerfile`, `build.yml`, and `Justfile` (`latest`).
-- **One-shot setup scripts:** bump `HWS_VER` in `bazzite-hardware-setup` or `setup_version` in `bazzite-user-setup` so changed logic reruns on existing installs.
+- **One-shot setup scripts:** `HWS_VER` (`halcyon-hardware-setup`) and `setup_version` (`halcyon-user-setup`) live in the `halcyon-linux/python-packages` repo; bump them there and release the package so changed logic reruns on existing installs.
 - **GitHub Actions** are pinned by commit SHA with a version comment. Keep that format.
 
 ## Verification
 
 `build_files/finalization/verify` has groups `kernel | repos | packages | nvidia | final`. When you add or remove something the image depends on, update the matching group (`require_rpms`, `forbid_rpms`, `require_repos`).
 
-`verify final` forbids Waydroid, bundled fonts, the offline docs bundle, and the trimmed device kmods, and it checks that the combined justfile parses.
+`verify final` forbids Waydroid, bundled fonts, the offline docs bundle, and the trimmed device kmods, guards the `halcyon-*` migration (old `bazzite-*`/`ublue-nvidia-*` scripts and units must stay absent; their replacements must be present and enabled), and it checks that the combined justfile parses.
 
 ## Boundaries
 

@@ -22,6 +22,15 @@ common_packages=(
     bruh
     crh
     gameclass
+    halcyon-boot-remount
+    halcyon-dlss-swapper
+    halcyon-dynamic-fixes
+    halcyon-fetch-image
+    halcyon-hardware-setup
+    halcyon-nvidia-flatpak-runtime
+    halcyon-powersave
+    halcyon-snapper-config
+    halcyon-user-setup
     fuse-libs
     uld
     ublue-motd

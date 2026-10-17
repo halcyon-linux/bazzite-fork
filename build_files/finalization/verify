@@ -130,6 +130,9 @@ verify_packages() {
     require_rpms \
         steam lutris bazaar uupd btop fastfetch snapper bees \
         brh bruh crh gameclass bbrew-helper ublue-motd uupd-update \
+        halcyon-boot-remount halcyon-dlss-swapper halcyon-dynamic-fixes \
+        halcyon-fetch-image halcyon-hardware-setup halcyon-nvidia-flatpak-runtime \
+        halcyon-powersave halcyon-snapper-config halcyon-user-setup \
         input-remapper tailscale cockpit-system yad btrfs-assistant kernel-tools kmod
 
     # Virtualization is enabled by default; the full stack ships in the image.
@@ -237,6 +240,93 @@ verify_final() {
         fail "obsolete bazzite-libvirtd-setup.service is present"
     else
         pass "obsolete bazzite-libvirtd-setup.service absent"
+    fi
+
+    # The image-owned shell helpers were replaced by the halcyon-* Copr
+    # packages; their old libexec scripts and unit names must not come back.
+    local old_path
+    for old_path in \
+        /usr/libexec/bazzite-boot-remount \
+        /usr/libexec/bazzite-dynamic-fixes \
+        /usr/libexec/bazzite-fetch-image \
+        /usr/libexec/bazzite-hardware-setup \
+        /usr/libexec/bazzite-powersave \
+        /usr/libexec/bazzite-privileged-user-setup \
+        /usr/libexec/bazzite-snapper-config \
+        /usr/libexec/bazzite-user-setup \
+        /usr/libexec/ublue-nvidia-flatpak-runtime-sync \
+        /usr/libexec/ublue-nvidia-flatpak-runtime-notify \
+        /usr/bin/dlss-swapper \
+        /usr/bin/dlss-swapper-dll \
+        /usr/lib/systemd/system/bazzite-hardware-setup.service \
+        /usr/lib/systemd/system/ublue-nvidia-flatpak-runtime-sync.service \
+        /usr/lib/systemd/system/ublue-nvidia-flatpak-runtime-verify.service \
+        /usr/lib/systemd/user/bazzite-user-setup.service \
+        /usr/lib/systemd/user/bazzite-dynamic-fixes.service; do
+        if [[ -e "$old_path" ]]; then
+            fail "obsolete path present: $old_path"
+        else
+            pass "obsolete path absent: $old_path"
+        fi
+    done
+
+    # The replacement binaries come from the RPM packages.
+    local new_bin
+    for new_bin in \
+        /usr/bin/halcyon-boot-remount \
+        /usr/bin/halcyon-dlss-swapper \
+        /usr/bin/halcyon-dlss-swapper-dll \
+        /usr/bin/halcyon-dynamic-fixes \
+        /usr/bin/halcyon-fetch-image \
+        /usr/bin/halcyon-hardware-setup \
+        /usr/bin/halcyon-nvidia-flatpak-runtime-notify \
+        /usr/bin/halcyon-nvidia-flatpak-runtime-sync \
+        /usr/bin/halcyon-powersave \
+        /usr/bin/halcyon-privileged-user-setup \
+        /usr/bin/halcyon-snapper-config \
+        /usr/bin/halcyon-user-setup; do
+        if [[ -x "$new_bin" ]]; then
+            pass "halcyon binary present: $new_bin"
+        else
+            fail "halcyon binary missing or not executable: $new_bin"
+        fi
+    done
+
+    # The renamed units ship with the image.
+    local new_unit
+    for new_unit in \
+        /usr/lib/systemd/system/halcyon-hardware-setup.service \
+        /usr/lib/systemd/system/halcyon-nvidia-flatpak-runtime-sync.service \
+        /usr/lib/systemd/system/halcyon-nvidia-flatpak-runtime-verify.service \
+        /usr/lib/systemd/user/halcyon-dynamic-fixes.service \
+        /usr/lib/systemd/user/halcyon-user-setup.service; do
+        if [[ -e "$new_unit" ]]; then
+            pass "halcyon unit present: $new_unit"
+        else
+            fail "halcyon unit missing: $new_unit"
+        fi
+    done
+
+    # They stay enabled exactly where their predecessors were.
+    for new_unit in \
+        /etc/systemd/system/multi-user.target.wants/halcyon-hardware-setup.service \
+        /etc/systemd/system/multi-user.target.wants/halcyon-nvidia-flatpak-runtime-sync.service \
+        /etc/systemd/system/graphical.target.wants/halcyon-nvidia-flatpak-runtime-verify.service \
+        /etc/systemd/user/default.target.wants/halcyon-user-setup.service \
+        /etc/systemd/user/default.target.wants/halcyon-dynamic-fixes.service; do
+        if [[ -e "$new_unit" ]]; then
+            pass "halcyon unit enabled: $new_unit"
+        else
+            fail "halcyon unit not enabled: $new_unit"
+        fi
+    done
+
+    # pkexec must point at the RPM-provided privileged helper.
+    if grep -qF 'exec.path">/usr/bin/halcyon-privileged-user-setup</annotate>' \
+        /usr/share/polkit-1/actions/org.bazzite.privileged.user.setup.policy 2>/dev/null; then
+        pass "polkit action points at halcyon-privileged-user-setup"
+    else
+        fail "polkit action does not point at halcyon-privileged-user-setup"
     fi
 }
 

@@ -97,18 +97,18 @@
 │   │       │   │   └── 80-inotify.conf
 │   │       │   ├── systemd
 │   │       │   │   ├── system
-│   │       │   │   │   ├── bazzite-hardware-setup.service
 │   │       │   │   │   ├── beesd@.timer
 │   │       │   │   │   ├── cockpit.service
 │   │       │   │   │   ├── dev-hugepages1G.mount
 │   │       │   │   │   ├── fstrim.service.d
 │   │       │   │   │   │   └── workaround-no-root-trim.conf
+│   │       │   │   │   ├── halcyon-hardware-setup.service
 │   │       │   │   │   ├── kmod-sleep-workaround@.service
 │   │       │   │   │   └── mcelog.service.d
 │   │       │   │   │       └── override.conf
 │   │       │   │   └── user
-│   │       │   │       ├── bazzite-dynamic-fixes.service
-│   │       │   │       ├── bazzite-user-setup.service
+│   │       │   │       ├── halcyon-dynamic-fixes.service
+│   │       │   │       ├── halcyon-user-setup.service
 │   │       │   │       └── steam-icons-cleanup.service
 │   │       │   ├── sysusers.d
 │   │       │   │   └── plugdev.conf
@@ -128,15 +128,6 @@
 │   │       │   └── udev
 │   │       │       └── rules.d
 │   │       │           └── 60-schedulers.rules
-│   │       ├── libexec
-│   │       │   ├── bazzite-boot-remount
-│   │       │   ├── bazzite-dynamic-fixes
-│   │       │   ├── bazzite-fetch-image
-│   │       │   ├── bazzite-hardware-setup
-│   │       │   ├── bazzite-powersave
-│   │       │   ├── bazzite-privileged-user-setup
-│   │       │   ├── bazzite-snapper-config
-│   │       │   └── bazzite-user-setup
 │   │       └── share
 │   │           ├── applications
 │   │           │   └── bbrew.desktop
@@ -189,22 +180,16 @@
 │   │           └── zsh-preexec.sh
 │   ├── nvidia
 │   │   └── usr
-│   │       ├── bin
-│   │       │   ├── dlss-swapper
-│   │       │   └── dlss-swapper-dll
 │   │       ├── lib
 │   │       │   ├── modprobe.d
 │   │       │   │   └── nvidia-power.conf
 │   │       │   ├── systemd
 │   │       │   │   └── system
-│   │       │   │       ├── ublue-nvidia-flatpak-runtime-sync.service
-│   │       │   │       └── ublue-nvidia-flatpak-runtime-verify.service
+│   │       │   │       ├── halcyon-nvidia-flatpak-runtime-sync.service
+│   │       │   │       └── halcyon-nvidia-flatpak-runtime-verify.service
 │   │       │   └── udev
 │   │       │       └── rules.d
 │   │       │           └── 80-nvidia-pm.rules
-│   │       ├── libexec
-│   │       │   ├── ublue-nvidia-flatpak-runtime-notify
-│   │       │   └── ublue-nvidia-flatpak-runtime-sync
 │   │       └── share
 │   │           └── ublue-os
 │   │               ├── firefox-config
@@ -220,19 +205,11 @@
 │       │       ├── dnf-dummy.sh
 │       │       └── user-motd.sh
 │       └── usr
-│           ├── bin
-│           │   ├── dnf
-│           │   └── switcherooctl
 │           ├── lib
 │           │   └── udev
 │           │       └── hwdb.d
 │           │           └── 60-keyboard.hwdb
 │           └── share
-│               ├── alsa
-│               │   └── ucm2
-│               │       └── USB-Audio
-│               │           └── Sony
-│               │               └── DualSense-PS5.conf
 │               ├── bazzite-cli
 │               │   ├── bling
 │               │   └── bling.fish
@@ -247,4 +224,4 @@
 ├── TODO.md
 └── tree.list
 
-102 directories, 146 files
+94 directories, 131 files

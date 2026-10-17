@@ -6,7 +6,7 @@ system_services=(
     brew-setup.service
     input-remapper.service
     uupd.timer
-    bazzite-hardware-setup.service
+    halcyon-hardware-setup.service
     dev-hugepages1G.mount
     libvirtd.service
     ds-inhibit.service
@@ -17,10 +17,10 @@ system_services=(
 )
 
 global_services=(
-    bazzite-user-setup.service
+    halcyon-user-setup.service
     podman.socket
     systemd-tmpfiles-setup.service
-    bazzite-dynamic-fixes.service
+    halcyon-dynamic-fixes.service
     dmemcg-booster-user.service
 )
 

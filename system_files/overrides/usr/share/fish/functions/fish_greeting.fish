@@ -1,8 +1,8 @@
 function fish_greeting
 	if test -d "$HOME"
 		if test ! -e "$HOME"/.config/no-show-user-motd
-			if test -x "/usr/libexec/ublue-motd"
-				/usr/libexec/ublue-motd
+			if test -x "/usr/bin/ublue-motd"
+				/usr/bin/ublue-motd
 			end
 		end
 	end

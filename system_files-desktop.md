@@ -4,7 +4,7 @@
 keep it path-based rather than bundling assets into an opaque archive. This is a map of the upstream
 Bazzite integrations retained by this single-image fork.
 
-**Current scale:** 74 files across 55 directories.
+**Current scale:** 66 files across 54 directories.
 
 **Legend:** ✅ active in this image · ⚠️ conditional (needs a graphical session, an optional package, or a kernel arg) · ❌ dormant/dead in this fork
 
@@ -15,7 +15,6 @@ Bazzite integrations retained by this single-image fork.
 | [Audit summary](#audit-summary) | Current scope and trim history |
 | [etc](#etc) | System-wide defaults (10 files) |
 | [usr/bin](#usrbin) | User-facing CLI tools — intentionally empty |
-| [usr/libexec](#usrlibexec) | Privileged/background helpers (8 files) |
 | [systemd, udev, sysctl and plumbing](#systemd-udev-sysctl-and-plumbing) | Units, sysctls, udev, sysusers, tmpfiles, modules-load, dracut, tuned |
 | [usr/share](#usrshare) | Desktop entries, containers, plymouth, polkit, ublue-os, wireplumber, yafti |
 | [usr/share/ublue-os/just](#usrshareublue-osjust) | The 8 `ujust` source files |
@@ -73,18 +72,25 @@ grouping guide, not as generated build metadata.
 11. **`bazzite-libvirtd-setup.service`** — one-shot that enabled libvirtd after the next reboot,
     needed only for the old `ujust`-driven `rpm-ostree install` flow. Removed now that virtualization
     ships enabled by default; the recipe no longer references it.
+12. **Shell helpers → `halcyon-*` RPMs** — the eight `usr/libexec/bazzite-*` helpers moved to Python
+    packages in the halcyon `python-packages` Copr (`halcyon-boot-remount`, `halcyon-dynamic-fixes`,
+    `halcyon-fetch-image`, `halcyon-hardware-setup`, `halcyon-powersave`, `halcyon-user-setup` +
+    `halcyon-privileged-user-setup`, `halcyon-snapper-config`); the NVIDIA runtime pair and DLSS
+    wrappers followed (`halcyon-nvidia-flatpak-runtime`, `halcyon-dlss-swapper`). Units were renamed
+    `bazzite-*`/`ublue-nvidia-*` → `halcyon-*`; recipe names and runtime state paths are unchanged.
 
-`bazzite-hardware-setup` was rewritten on 2026-10-18: dropped the zram `vm.min_free_kbytes` tweak and
-the inert Waydroid apparmor cleanup; kept the karg handling (bluetooth/nomodeset, reboot-if-changed)
-and the distrobox hostname/`/etc/hostname` fix. The state gate is now `HWS_VER=81` (80 for the
-rewrite, 81 for the KVM kargs).
+`halcyon-hardware-setup` (formerly `bazzite-hardware-setup`) was rewritten on 2026-10-18: dropped the
+zram `vm.min_free_kbytes` tweak and the inert Waydroid apparmor cleanup; kept the karg handling
+(bluetooth/nomodeset, reboot-if-changed) and the distrobox hostname/`/etc/hostname` fix. The state
+gate is `HWS_VER=81` (80 for the rewrite, 81 for the KVM kargs), in the `halcyon-hardware-setup`
+package (python-packages).
 
 **Virtualization is enabled by default (2026-10-18):** the image bakes in `virt-manager`,
 `virt-install`, `libvirt-daemon`, `libvirt-daemon-kvm`, `libvirt-daemon-config-{network,nwfilter}`,
 and `virtiofsd`; `libvirtd.service` is enabled at build time by `configure-system-services`;
-`bazzite-hardware-setup` applies the `kvm.ignore_msrs=1`/`kvm.report_ignored_msrs=0` kargs;
+`halcyon-hardware-setup` applies the `kvm.ignore_msrs=1`/`kvm.report_ignored_msrs=0` kargs;
 `bazzite-libvirt.conf` recreates the libvirt/swtpm `/var` directories at boot (the packaged payload
-is stripped by `finalize`); and the privileged user-setup helper adds the login user to the `libvirt`
+is stripped by `finalize`); and `halcyon-privileged-user-setup` adds the login user to the `libvirt`
 group. `ujust setup-virtualization` remains as the repair/disable path.
 
 Remaining Waydroid mentions, left in place deliberately (all guarded or inert): the
@@ -112,24 +118,9 @@ System-wide defaults. 10 files.
 
 ## usr/bin
 
-Intentionally empty: the in-tree scripts were replaced by RPM-provided commands (`brh`, `bruh`,
-`crh`, `gameclass`, `bbrew-helper`, `ublue-motd`, `uupd-update`). Keep new PATH commands out of this
-tree; build-time downloads and internal helpers belong in `usr/libexec`.
-
-## usr/libexec
-
-Privileged/background helpers. 8 files.
-
-| File | Why it exists | Needed? |
-|---|---|---|
-| `bazzite-boot-remount` | Remount `/boot` read-write for updates then back to read-only (bootc/rpm-ostree boot partition handling) | ✅ |
-| `bazzite-dynamic-fixes` | Per-session GPU workarounds — sets `GSK_RENDERER=gl` on Intel i915/xe to avoid GTK4 glitches; removes it when not needed | ✅ (user service, enabled globally) |
-| `bazzite-fetch-image` | Prints `image-name:branch` + signed/unsigned marker — used in prompts/scripts | ⚠️ cosmetic |
-| `bazzite-hardware-setup` | Versioned one-shot hardware setup (`HWS_VER=81`): applies the bluetooth/nomodeset/KVM kargs (reboot if changed), fixes over-long hostnames and missing `/etc/hostname` for distrobox; state in `/etc/bazzite` | ✅ (system service, enabled) |
-| `bazzite-powersave` | Sets the power profile over DBus (`power-saver`/`balanced`) — used by ujust/ppd integration | ✅ |
-| `bazzite-privileged-user-setup` | Root-side user setup: enable NTP, allow Tailscale operator, add the user to the `libvirt` group; invoked via polkit from user-setup | ✅ |
-| `bazzite-snapper-config` | Snapper defaults (retention disabled; user opts in) — ujust wrappers | ✅ (snapper installed) |
-| `bazzite-user-setup` | Per-user first-login setup (versioned): config markers, Templates symlinks (vkBasalt/dxvk/MangoHud examples), triggers the privileged helper | ✅ (user service, enabled) |
+Intentionally empty: every in-tree command is RPM-provided (`brh`, `bruh`, `crh`, `gameclass`,
+`bbrew-helper`, `ublue-motd`, `uupd-update`, and the `halcyon-*` helpers). Keep new PATH commands
+out of this tree.
 
 ## systemd, udev, sysctl and plumbing
 
@@ -137,7 +128,7 @@ Privileged/background helpers. 8 files.
 
 | File | Why it exists | Needed? |
 |---|---|---|
-| `usr/lib/systemd/system/bazzite-hardware-setup.service` | Runs the hardware setup oneshot; ordering vs rpm-ostree/tuned | ✅ |
+| `usr/lib/systemd/system/halcyon-hardware-setup.service` | Runs the `halcyon-hardware-setup` oneshot (RPM); ordering vs rpm-ostree/tuned | ✅ |
 | `…/beesd@.timer` | Daily timed beesd (dedup) run | ✅ |
 | `…/cockpit.service` | Gate unit `Requires=` the podman cockpit container; toggled by ujust | ✅ |
 | `…/dev-hugepages1G.mount` | Mounts 1G hugepages **when** `hugepagesz=1G` kernel arg is present (gaming/VM perf) | ✅ conditional |
@@ -149,8 +140,8 @@ Privileged/background helpers. 8 files.
 
 | File | Why it exists | Needed? |
 |---|---|---|
-| `usr/lib/systemd/user/bazzite-user-setup.service` | Runs user setup at login | ✅ |
-| `usr/lib/systemd/user/bazzite-dynamic-fixes.service` | Runs GPU workaround logic at login | ✅ |
+| `usr/lib/systemd/user/halcyon-user-setup.service` | Runs the `halcyon-user-setup` first-login setup (RPM) | ✅ |
+| `usr/lib/systemd/user/halcyon-dynamic-fixes.service` | Runs the `halcyon-dynamic-fixes` GPU workaround logic (RPM) at login | ✅ |
 | `usr/lib/systemd/user/steam-icons-cleanup.service` | One-shot each session: `ujust steam-icons remove` to prune dead Steam shortcuts (ublue-os/bazzite#3280) | ⚠️ |
 
 ### Sysctls
