@@ -297,7 +297,7 @@ setup-virtualization ACTION="":
       exit 0
     elif [ "$OPTION" == "" ]; then
       echo "${bold}Virtualization Setup${normal}"
-      echo "NOTE: Enabling Virtualization will install virt-manager and set kernel args"
+      echo "NOTE: Virtualization is enabled by default on this image; these options re-apply or disable it"
       OPTION=$(Choose \
         "Enable Virtualization" \
         "Disable Virtualization" \
@@ -310,8 +310,10 @@ setup-virtualization ACTION="":
           echo "If virt-manager says libvirtd.sock is not available after a big update, re-run this command."
           sudo systemctl enable --now libvirtd 2> /dev/null
         fi
-        echo "Installing virt-manager..."
-        sudo rpm-ostree install --idempotent virt-manager virt-install
+        if ! rpm -q virt-manager virt-install >/dev/null 2>&1; then
+          echo "Installing virt-manager..."
+          sudo rpm-ostree install --idempotent virt-manager virt-install
+        fi
         rpm-ostree kargs \
         --append-if-missing="kvm.ignore_msrs=1" \
         --append-if-missing="kvm.report_ignored_msrs=0"
@@ -322,8 +324,6 @@ setup-virtualization ACTION="":
         sudo chown tss /var/lib/swtpm-localca
         sudo restorecon -rv /var/lib/libvirt
         sudo restorecon -rv /var/log/libvirt
-        sudo systemctl enable bazzite-libvirtd-setup.service \
-          && echo "libvirtd will be enabled at next reboot"
         echo 'Please reboot to apply changes'
         if ! getent group libvirt 1>/dev/null; then
           sudo groupadd --system libvirt
@@ -333,10 +333,6 @@ setup-virtualization ACTION="":
       if [ "$(systemctl is-enabled libvirtd.service)" == "enabled" ]; then
         echo "${red}Disabling${n} libvirtd before removal"
         sudo systemctl disable --now libvirtd 2> /dev/null
-      fi
-      if [ "$(systemctl is-enabled bazzite-libvirtd-setup.service)" == "enabled" ]; then
-        echo "${red}Disabling${n} bazzite-libvirtd-setup"
-        sudo systemctl disable --now bazzite-libvirtd-setup.service 2> /dev/null
       fi
       echo "Removing virt-manager..."
       if rpm -q virt-manager >/dev/null 2>&1 || rpm -q virt-install >/dev/null 2>&1; then
@@ -348,12 +344,3 @@ setup-virtualization ACTION="":
       echo 'Please reboot to apply changes'
     fi
 # vim: set ft=make :
-
-# Adds a script in Steam to boot Windows which is useful for dual-boot setups
-[group("system")]
-setup-boot-windows-steam:
-    echo "Making efibootmgr -n usable without sudo password"
-    echo "%wheel ALL=(root) NOPASSWD: /usr/sbin/efibootmgr" | sudo tee /etc/sudoers.d/efibootmgr-config
-    echo "Adding /usr/bin/boot-windows as a Non-steam game"
-    touch /tmp/addnonsteamgamefile
-    steam "steam://addnonsteamgame/%2Fusr%2Fbin%2Fboot-windows"

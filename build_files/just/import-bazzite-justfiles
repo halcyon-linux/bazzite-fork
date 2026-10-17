@@ -12,7 +12,6 @@ justfiles=(
     "system-tools.just"
     "83-bazzite-audio.just"
     "87-bazzite-framegen.just"
-    "89-bazzite-mesa-git.just"
     "maintenance.just"
 )
 

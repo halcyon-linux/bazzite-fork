@@ -1,4 +1,5 @@
 .
+├── AGENTS.md
 ├── build_files
 │   ├── finalization
 │   │   ├── finalize
@@ -51,31 +52,24 @@
 │   └── run-image
 ├── LICENSE
 ├── README.md
+├── references
+│   ├── bbrew-helper.bash
+│   ├── bruh.bash
+│   ├── custom-resolution-helper.bash
+│   └── gameclass.bash
 ├── system_files
 │   ├── desktop
 │   │   ├── etc
 │   │   │   ├── conf.d
 │   │   │   │   └── btrfs-dedup
-│   │   │   ├── distrobox
-│   │   │   │   └── distrobox.ini
-│   │   │   ├── dnf
-│   │   │   │   └── dnf.conf
-│   │   │   ├── environment
 │   │   │   ├── geoclue
 │   │   │   │   └── conf.d
 │   │   │   │       └── 99-beacondb.conf
 │   │   │   ├── profile.d
-│   │   │   │   ├── askpass.sh
-│   │   │   │   └── open.sh
+│   │   │   │   └── 99-custom-env.sh
 │   │   │   ├── security
 │   │   │   │   └── limits.d
 │   │   │   │       └── memlock.conf
-│   │   │   ├── skel
-│   │   │   │   └── .config
-│   │   │   │       ├── autostart
-│   │   │   │       │   └── bazzite-portal.desktop
-│   │   │   │       └── user-tmpfiles.d
-│   │   │   │           └── discord-rpc.conf
 │   │   │   ├── systemd
 │   │   │   │   ├── system
 │   │   │   │   │   └── beesd@.service.d
@@ -86,26 +80,10 @@
 │   │   │   │   │   └── timeout.conf
 │   │   │   │   └── zram-generator.conf
 │   │   │   ├── ublue-os
-│   │   │   │   └── topgrade.toml
-│   │   │   ├── uupd
-│   │   │   │   └── config.json
-│   │   │   └── xdg
-│   │   │       └── mimeapps.list
+│   │   │   │   └── .gitkeep
+│   │   │   └── uupd
+│   │   │       └── config.json
 │   │   └── usr
-│   │       ├── bin
-│   │       │   ├── bazzite-rollback-helper
-│   │       │   ├── bazzite-steam
-│   │       │   ├── bazzite-steam-bpm
-│   │       │   ├── bazzite-steam-firstrun
-│   │       │   ├── bbrew-helper
-│   │       │   ├── boot-windows
-│   │       │   ├── brh -> bazzite-rollback-helper
-│   │       │   ├── bruh
-│   │       │   ├── copr
-│   │       │   ├── crh -> custom-resolution-helper
-│   │       │   ├── custom-resolution-helper
-│   │       │   ├── gameclass
-│   │       │   └── mesa-git
 │   │       ├── lib
 │   │       │   ├── dracut
 │   │       │   │   └── dracut.conf.d
@@ -120,28 +98,22 @@
 │   │       │   ├── systemd
 │   │       │   │   ├── system
 │   │       │   │   │   ├── bazzite-hardware-setup.service
-│   │       │   │   │   ├── bazzite-iwd-migration.service
-│   │       │   │   │   ├── bazzite-libvirtd-setup.service
 │   │       │   │   │   ├── beesd@.timer
 │   │       │   │   │   ├── cockpit.service
 │   │       │   │   │   ├── dev-hugepages1G.mount
-│   │       │   │   │   ├── force-wol.service
 │   │       │   │   │   ├── fstrim.service.d
 │   │       │   │   │   │   └── workaround-no-root-trim.conf
-│   │       │   │   │   ├── incus-workaround.service
 │   │       │   │   │   ├── kmod-sleep-workaround@.service
 │   │       │   │   │   └── mcelog.service.d
 │   │       │   │   │       └── override.conf
 │   │       │   │   └── user
 │   │       │   │       ├── bazzite-dynamic-fixes.service
 │   │       │   │       ├── bazzite-user-setup.service
-│   │       │   │       ├── ntfs-nag.service
 │   │       │   │       └── steam-icons-cleanup.service
 │   │       │   ├── sysusers.d
 │   │       │   │   └── plugdev.conf
 │   │       │   ├── tmpfiles.d
-│   │       │   │   ├── bazzite-libvirt.conf
-│   │       │   │   └── incus-workaround.conf
+│   │       │   │   └── bazzite-libvirt.conf
 │   │       │   ├── tuned
 │   │       │   │   └── profiles
 │   │       │   │       ├── balanced-bazzite
@@ -157,27 +129,16 @@
 │   │       │       └── rules.d
 │   │       │           └── 60-schedulers.rules
 │   │       ├── libexec
-│   │       │   ├── bazzite-bling-fastfetch
 │   │       │   ├── bazzite-boot-remount
 │   │       │   ├── bazzite-dynamic-fixes
 │   │       │   ├── bazzite-fetch-image
 │   │       │   ├── bazzite-hardware-setup
-│   │       │   ├── bazzite-iwd-migration
 │   │       │   ├── bazzite-powersave
 │   │       │   ├── bazzite-privileged-user-setup
 │   │       │   ├── bazzite-snapper-config
-│   │       │   ├── bazzite-user-setup
-│   │       │   ├── force-wol
-│   │       │   ├── hwsupport
-│   │       │   │   └── sysid
-│   │       │   ├── ntfs-exfat-monitor-script
-│   │       │   ├── topgrade
-│   │       │   │   └── third-party-css-loader-update
-│   │       │   ├── ublue-motd
-│   │       │   └── uupd-update
+│   │       │   └── bazzite-user-setup
 │   │       └── share
 │   │           ├── applications
-│   │           │   ├── bazzite-steam-bpm.desktop
 │   │           │   └── bbrew.desktop
 │   │           ├── containers
 │   │           │   └── systemd
@@ -212,12 +173,13 @@
 │   │           │   │   ├── 82-bazzite-apps.just
 │   │           │   │   ├── 83-bazzite-audio.just
 │   │           │   │   ├── 87-bazzite-framegen.just
-│   │           │   │   ├── 89-bazzite-mesa-git.just
 │   │           │   │   ├── maintenance.just
 │   │           │   │   └── system-tools.just
 │   │           │   ├── motd
-│   │           │   │   ├── env
-│   │           │   │   └── template.md
+│   │           │   │   ├── template.md
+│   │           │   │   └── tips
+│   │           │   │       ├── 10-halcyon.md
+│   │           │   │       └── 20-tools.md
 │   │           │   └── topgrade.toml
 │   │           ├── wireplumber
 │   │           │   └── wireplumber.conf.d
@@ -226,9 +188,6 @@
 │   │           │   └── yafti.yml
 │   │           └── zsh-preexec.sh
 │   ├── nvidia
-│   │   ├── etc
-│   │   │   └── distrobox
-│   │   │       └── distrobox.ini
 │   │   └── usr
 │   │       ├── bin
 │   │       │   ├── dlss-swapper
@@ -258,7 +217,8 @@
 │       │   ├── greenboot
 │       │   │   └── greenboot.conf
 │       │   └── profile.d
-│       │       └── dnf-dummy.sh
+│       │       ├── dnf-dummy.sh
+│       │       └── user-motd.sh
 │       └── usr
 │           ├── bin
 │           │   ├── dnf
@@ -287,4 +247,4 @@
 ├── TODO.md
 └── tree.list
 
-112 directories, 176 files
+102 directories, 146 files

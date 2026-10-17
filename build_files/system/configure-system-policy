@@ -27,6 +27,7 @@ coprs=(
     ublue-os/bazzite-multilib
     ublue-os/staging
     ublue-os/packages
+    aahsnr-work/python-packages
     ycollet/audinux
     che/nerd-fonts
 )

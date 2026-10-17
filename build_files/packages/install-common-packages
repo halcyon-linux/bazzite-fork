@@ -17,8 +17,15 @@ dnf5 -y copr disable bieszczaders/kernel-cachyos-addons
 
 common_packages=(
     bpftune-gaming
+    bbrew-helper
+    brh
+    bruh
+    crh
+    gameclass
     fuse-libs
     uld
+    ublue-motd
+    uupd-update
     bazaar
     mission-center
     greenboot
@@ -70,7 +77,15 @@ common_packages=(
     ds-inhibit
     bazzite-portal
     kernel-tools
+    kmod
     ls-iommu
+    virt-manager
+    virt-install
+    libvirt-daemon
+    libvirt-daemon-kvm
+    libvirt-daemon-config-network
+    libvirt-daemon-config-nwfilter
+    virtiofsd
 )
 dnf5 --setopt=install_weak_deps=False --setopt='*.skip_if_unavailable=False' -y install "${common_packages[@]}"
 

@@ -122,13 +122,30 @@ verify_repos() {
         'copr:copr.fedorainfracloud.org:ublue-os:bazzite' \
         'copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib' \
         'copr:copr.fedorainfracloud.org:ublue-os:staging' \
-        'copr:copr.fedorainfracloud.org:ublue-os:packages'
+        'copr:copr.fedorainfracloud.org:ublue-os:packages' \
+        'copr:copr.fedorainfracloud.org:aahsnr-work:python-packages'
 }
 
 verify_packages() {
     require_rpms \
         steam lutris bazaar uupd btop fastfetch snapper bees \
-        input-remapper tailscale cockpit-system yad btrfs-assistant kernel-tools
+        brh bruh crh gameclass bbrew-helper ublue-motd uupd-update \
+        input-remapper tailscale cockpit-system yad btrfs-assistant kernel-tools kmod
+
+    # Virtualization is enabled by default; the full stack ships in the image.
+    require_rpms \
+        virt-manager virt-install libvirt-daemon libvirt-daemon-kvm \
+        libvirt-daemon-config-network swtpm-tools
+
+    # kmod-sleep-workaround@.service shells out to these on suspend/resume.
+    local modbin
+    for modbin in /usr/bin/rmmod /usr/bin/modprobe; do
+        if [[ -x "$modbin" ]]; then
+            pass "kmod binary present: $modbin"
+        else
+            fail "kmod binary missing: $modbin"
+        fi
+    done
 }
 
 verify_nvidia() {
@@ -207,6 +224,19 @@ verify_final() {
         pass "ujust justfile parses"
     else
         fail "ujust justfile failed to parse"
+    fi
+
+    # Virtualization is enabled by default: libvirtd must be enabled at build
+    # time, and the obsolete upstream one-shot must not come back.
+    if [[ -e /etc/systemd/system/multi-user.target.wants/libvirtd.service ]]; then
+        pass "libvirtd.service is enabled"
+    else
+        fail "libvirtd.service is not enabled"
+    fi
+    if [[ -e /usr/lib/systemd/system/bazzite-libvirtd-setup.service ]]; then
+        fail "obsolete bazzite-libvirtd-setup.service is present"
+    else
+        pass "obsolete bazzite-libvirtd-setup.service absent"
     fi
 }
 

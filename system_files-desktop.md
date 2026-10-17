@@ -4,7 +4,7 @@
 keep it path-based rather than bundling assets into an opaque archive. This is a map of the upstream
 Bazzite integrations retained by this single-image fork.
 
-**Current scale:** 109 tracked entries after grouping the `ujust` sources.
+**Current scale:** 74 files across 55 directories.
 
 **Legend:** ✅ active in this image · ⚠️ conditional (needs a graphical session, an optional package, or a kernel arg) · ❌ dormant/dead in this fork
 
@@ -12,23 +12,22 @@ Bazzite integrations retained by this single-image fork.
 
 | Section | Contents |
 |---|---|
-| [Audit summary](#audit-summary) | Current scope and prior trims |
-| [etc](#etc) | System-wide defaults (20 files) |
-| [usr/bin](#usrbin) | User-facing CLI tools (15 entries) |
-| [usr/libexec](#usrlibexec) | Privileged/background helpers (20 files) |
-| [systemd, udev, sysctl and plumbing](#systemd-udev-sysctl-and-plumbing) | Units, udev rules, sysctls, tuned profiles, modprobe/dracut/sysusers/tmpfiles |
-| [usr/share](#usrshare) | Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti |
-| [usr/share/ublue-os/just](#usrshareublue-osjust) | The 9 `ujust` source files |
+| [Audit summary](#audit-summary) | Current scope and trim history |
+| [etc](#etc) | System-wide defaults (10 files) |
+| [usr/bin](#usrbin) | User-facing CLI tools — intentionally empty |
+| [usr/libexec](#usrlibexec) | Privileged/background helpers (8 files) |
+| [systemd, udev, sysctl and plumbing](#systemd-udev-sysctl-and-plumbing) | Units, sysctls, udev, sysusers, tmpfiles, modules-load, dracut, tuned |
+| [usr/share](#usrshare) | Desktop entries, containers, plymouth, polkit, ublue-os, wireplumber, yafti |
+| [usr/share/ublue-os/just](#usrshareublue-osjust) | The 8 `ujust` source files |
 
 ## Audit summary
 
-The earlier per-file audit was written against a 134-entry tree. Its old active/conditional counts are
-not current; the current tracked payload count is shown above. `system_files-desktop.md` is maintained
-as a grouping guide, not as generated build metadata.
+This map reflects the working tree as of 2026-10-18. `system_files-desktop.md` is maintained as a
+grouping guide, not as generated build metadata.
 
-**Previously removed deadweight:**
+**Trim history (deliberate removals):**
 
-1. **Waydroid family (15 files)** — image deliberately ships no Waydroid:
+1. **Waydroid family (~15 files)** — the image deliberately ships no Waydroid:
    `etc/default/waydroid-launcher`, `usr/bin/waydroid-launcher`,
    `usr/libexec/waydroid-container-{start,stop,restart}`, `usr/libexec/waydroid-fix-controllers`,
    `usr/share/ublue-os/just/82-bazzite-waydroid.just`,
@@ -36,84 +35,101 @@ as a grouping guide, not as generated build metadata.
    `usr/share/applications/waydroid-container-restart.desktop`,
    `usr/share/applications/Waydroid/{capsule,hero,icon,logo,store-capsule}.png`.
    The matching `import` line was dropped from `build_files/just/import-bazzite-justfiles`.
-2. `usr/bin/edit` symlink + `etc/profile.d/ms-edit-default-editor.sh` — `msedit` is commented out of the package list.
-3. `etc/systemd/system/beesd@.service.d/override.conf` — byte-identical duplicate of `bees-timeout.conf`.
-4. `usr/share/polkit-1/rules.d/90-corectrl.rules` — CoreCtrl isn't installed by this fork.
-5. **Offline docs bundle** (per maintainer decision): `usr/share/ublue-os/docs/serve`, the CI "Download offline docs" step, and `build_files/label-ublue-docs` — this bundle was also the only source of the Roboto/Roboto Mono webfonts.
-6. **Device-specific trim** (per maintainer decision): the akmods install list was reduced to `nct6687d` only (MSI Z790 sensor chip); removed `usr/lib/modprobe.d/fw-charge-control.conf`, `usr/lib/modprobe.d/new-lg4ff.conf`, `usr/lib/udev/rules.d/90-dolphin-motion.rules`; dropped the `iio-sensor-proxy`, `usbip`, and `obs-studio-plugin-vkcapture-hook-libs` packages.
+2. **`usr/bin` purge** — every in-tree CLI command was removed. User-facing commands now come from
+   RPMs: `brh`, `bruh`, `crh`, `gameclass`, `bbrew-helper` (halcyon COPR builds), plus `ublue-motd`
+   and `uupd-update` (Universal Blue). Removed: `bazzite-rollback-helper`, `bazzite-steam`,
+   `bazzite-steam-bpm`, `bazzite-steam-firstrun`, `bbrew-helper`, `boot-windows`, `brh`, `bruh`,
+   `copr`, `crh`, `custom-resolution-helper`, `gameclass`, `mesa-git`. Reference bash
+   implementations live in `references/` at the repo root. Dangling references were cleaned:
+   the Steam-launcher `sed` block in `configure-desktop-integration`,
+   `usr/share/applications/bazzite-steam-bpm.desktop`, the `ujust setup-boot-windows-steam` recipe
+   + yafti entry, and the `bazzite-steam --disable-firstrun` relaunch in `fix-reset-steam`.
+3. **Wake-on-LAN family** — `usr/libexec/force-wol`, `usr/lib/systemd/system/force-wol.service`,
+   its entry in `build_files/system/configure-system-services`, the `ujust wol` recipe +
+   `toggle-wol` alias, and the yafti Wake-on-LAN action.
+4. **Incus** — `usr/lib/systemd/system/incus-workaround.service`,
+   `usr/lib/tmpfiles.d/incus-workaround.conf`, its `configure-system-services` entry, and the incus
+   `distrobox.ini` download in `install-system-integration-files`.
+5. **NTFS/exFAT nag** — `usr/lib/systemd/user/ntfs-nag.service`,
+   `usr/libexec/ntfs-exfat-monitor-script`, its `configure-system-services` entry, and the
+   `_disable-ntfs-service` recipe.
+6. **Mesa-git tooling** — `usr/bin/mesa-git` (earlier) and
+   `usr/share/ublue-os/just/89-bazzite-mesa-git.just` + its import line; Mesa Git builds are the
+   maintainer's own COPR now.
+7. **`hwsupport/sysid`** — ROG Ally/Flow DMI-name normalization helper; unreferenced after the
+   Waydroid and hardware-setup cleanups.
+8. **Earlier trims** — `bazzite-iwd-migration` (unit + script; NetworkManager/wpa_supplicant is
+   used), `bazzite-bling-fastfetch` (bling is RPM-provided), `usr/share/ublue-os/motd/env`,
+   `etc/profile.d/ms-edit-default-editor.sh` + `usr/bin/edit` symlink (msedit not installed),
+   `etc/systemd/system/beesd@.service.d/override.conf` (byte-identical duplicate),
+   `usr/share/polkit-1/rules.d/90-corectrl.rules` (CoreCtrl not installed).
+9. **Offline docs bundle** (per maintainer decision): `usr/share/ublue-os/docs/serve`, the CI
+   "Download offline docs" step, and `build_files/label-ublue-docs` — this bundle was also the only
+   source of the Roboto/Roboto Mono webfonts.
+10. **Device-specific trim** (per maintainer decision): the akmods install list was reduced to
+    `nct6687d` only (MSI Z790 sensor chip); removed `usr/lib/modprobe.d/fw-charge-control.conf`,
+    `usr/lib/modprobe.d/new-lg4ff.conf`, `usr/lib/udev/rules.d/90-dolphin-motion.rules`; dropped the
+    `iio-sensor-proxy`, `usbip`, and `obs-studio-plugin-vkcapture-hook-libs` packages.
+11. **`bazzite-libvirtd-setup.service`** — one-shot that enabled libvirtd after the next reboot,
+    needed only for the old `ujust`-driven `rpm-ostree install` flow. Removed now that virtualization
+    ships enabled by default; the recipe no longer references it.
 
-Remaining waydroid mentions left in place deliberately (all guarded or inert): the `waydroid-container.service`
-disable no-op in `build_files/nvidia/finalize-nvidia`, the guarded cleanup block in `bazzite-hardware-setup`,
-the commented package entries in `install-common-packages`, and the Waydroid entries in `yafti.yml`.
+`bazzite-hardware-setup` was rewritten on 2026-10-18: dropped the zram `vm.min_free_kbytes` tweak and
+the inert Waydroid apparmor cleanup; kept the karg handling (bluetooth/nomodeset, reboot-if-changed)
+and the distrobox hostname/`/etc/hostname` fix. The state gate is now `HWS_VER=81` (80 for the
+rewrite, 81 for the KVM kargs).
+
+**Virtualization is enabled by default (2026-10-18):** the image bakes in `virt-manager`,
+`virt-install`, `libvirt-daemon`, `libvirt-daemon-kvm`, `libvirt-daemon-config-{network,nwfilter}`,
+and `virtiofsd`; `libvirtd.service` is enabled at build time by `configure-system-services`;
+`bazzite-hardware-setup` applies the `kvm.ignore_msrs=1`/`kvm.report_ignored_msrs=0` kargs;
+`bazzite-libvirt.conf` recreates the libvirt/swtpm `/var` directories at boot (the packaged payload
+is stripped by `finalize`); and the privileged user-setup helper adds the login user to the `libvirt`
+group. `ujust setup-virtualization` remains as the repair/disable path.
+
+Remaining Waydroid mentions, left in place deliberately (all guarded or inert): the
+`waydroid-container.service` disable no-op in `build_files/nvidia/finalize-nvidia`, the commented
+package entries in `install-common-packages`, the `forbid_rpms` guard in `verify`, and the Waydroid
+section in `yafti.yml` — note its `configure-waydroid` recipes were removed with
+`82-bazzite-waydroid.just`, so those buttons now report an unknown recipe.
 
 ## etc
 
-System-wide defaults. 20 files.
+System-wide defaults. 10 files.
 
 | File | Why it exists | Needed? |
 |---|---|---|
 | `conf.d/btrfs-dedup` | Config for BTRFS dedup tooling; `RMLINT_SKIP=1` selects the duperemove path | ⚠️ policy file; image's active dedup path is `bees` |
-| `default/waydroid-launcher` | Per-handheld Waydroid resolution/density defaults (Deck, Ally, AYANEO…), consumed by the waydroid scripts | ❌ waydroid not installed |
-| `distrobox/distrobox.ini` | Declarative `distrobox assemble` presets (Arch/Debian/Fedora/openSUSE/Ubuntu toolbx) | ⚠️ user-invoked, distrobox in base |
-| `dnf/dnf.conf` | System default `install_weak_deps=False` — keeps atomic image lean | ✅ |
-| `environment` | `HOMEBREW_NO_AUTO_UPDATE=1` — brew updates handled explicitly, not per-shell | ✅ (brew shipped) |
 | `geoclue/conf.d/99-beacondb.conf` | Point WiFi geolocation at BeaconDB instead of Mozilla/MLS (which was shut down); fixes broken location (ublue-os/bazzite#1897) | ✅ |
-| `profile.d/askpass.sh` | Expose `SUDO_ASKPASS` (ssh-askpass) so GUI prompts from polkit wrappers work | ⚠️ |
-| `profile.d/ms-edit-default-editor.sh` | Default `EDITOR=/usr/bin/msedit` | ❌ `msedit` is commented out in the package list → points at nothing |
-| `profile.d/open.sh` | `open` alias → `xdg-open` (muscle memory from other OSes) | ✅ trivial |
+| `profile.d/99-custom-env.sh` | Halcyon user shell environment: XDG base directories, terminal/browser/editor defaults, `pathprepend` for user toolchains (`~/.local/bin`, cargo, go, bun, npm, emacs) | ✅ |
 | `security/limits.d/memlock.conf` | Raise memlock limit to ~2 GiB — some Proton/Wine games and VFIO need locked memory | ✅ |
-| `skel/.config/autostart/bazzite-portal.desktop` | First-login autostart of the "Bazzite Portal" (yafti-based welcome/setup app) for new users | ⚠️ needs a desktop session |
-| `skel/.config/user-tmpfiles.d/discord-rpc.conf` | Symlinks the Discord IPC socket into the user runtime dir so native games can talk RPC to the **Flatpak** Discord | ⚠️ |
 | `systemd/system/beesd@.service.d/bees-timeout.conf` | Caps `beesd` (BTRFS dedup) at 30 min, idle I/O, low OOM score | ✅ |
-| `systemd/system/beesd@.service.d/override.conf` | **Byte-identical** to the file above | ❌ pure duplicate → trim candidate |
 | `systemd/system.conf.d/timeout.conf` | `DefaultTimeoutStopSec=15s` — snappier shutdown/restart on atomic systems | ✅ |
 | `systemd/user.conf.d/timeout.conf` | Same, for the user manager | ✅ |
 | `systemd/zram-generator.conf` | zram swap: zstd, `min(ram/2, 16GiB)` — memory pressure relief | ✅ |
-| `ublue-os/topgrade.toml` | Adds the "Third Party CSS Loader Themes" custom command to topgrade | ⚠️ only matters if user uses topgrade |
+| `ublue-os/.gitkeep` | Keeps the `etc/ublue-os` directory present; topgrade's include path (`/etc/ublue-os/topgrade.toml`) lives here at runtime | ⚠️ |
 | `uupd/config.json` | Disables uupd's `distrobox` module (don't auto-update user distroboxes) | ✅ (uupd.timer enabled) |
-| `xdg/mimeapps.list` | Makes `.flatpakref` links open in Bazaar (the Flathub-first store, Bazzite's default app store) | ✅ |
 
 ## usr/bin
 
-User-facing CLI tools. 15 entries (12 scripts + 3 symlinks).
-
-| File | Why it exists | Needed? |
-|---|---|---|
-| `bazzite-rollback-helper` | Interactive rpm-ostree rollback/rebase helper: lists image tags from GHCR, verifies signature scheme | ✅ |
-| `brh` (symlink) / `bruh` (wrapper) | Short aliases for the above ("bruh moment" = instant rollback) | ✅ |
-| `bazzite-steam` | Steam launcher wrapper: NVIDIA env fix (`__GL_CONSTANT_FRAME_RATE_HINT`), first-run notice, dGPU blank-window workaround (via `cardwire`), shader-precache thread tuning, extest for Steam Controller on Wayland | ✅ (steam installed) |
-| `bazzite-steam-bpm` | Relaunch Steam into Big Picture Mode; workaround for a sluggish BPM switch (ublue-os/bazzite#1675) | ⚠️ |
-| `bazzite-steam-firstrun` | Localized "first start downloads Steam" notice | ✅ |
-| `bbrew-helper` | Wraps `brew` to bootstrap and launch **bbrew** (TUI Homebrew manager) | ✅ (brew shipped) |
-| `boot-windows` | Sets next EFI boot to Windows + reboots — dual-boot convenience (paired with a ujust recipe that adds a Steam shortcut + sudoers rule) | ✅ |
-| `copr` | One-word `dnf5 copr` wrapper | ✅ |
-| `custom-resolution-helper` + `crh` symlink | Manage custom display modes via modedb kernel args (for awkward panels) | ✅ |
-| `edit` (symlink → `/usr/bin/msedit`) | Friendly editor default | ❌ dangling (msedit not installed) |
-| `gameclass` | Sets the window class of a launched game (`GAMECLASS=exe=class gameclass …`) so compositors/Steam can identify windows correctly | ⚠️ needs a compositor (planned Hyprland) |
-| `mesa-git` | Run apps against a user-installed Mesa Git build (LD_LIBRARY_PATH wrapper), paired with ujust recipes | ⚠️ opt-in |
+Intentionally empty: the in-tree scripts were replaced by RPM-provided commands (`brh`, `bruh`,
+`crh`, `gameclass`, `bbrew-helper`, `ublue-motd`, `uupd-update`). Keep new PATH commands out of this
+tree; build-time downloads and internal helpers belong in `usr/libexec`.
 
 ## usr/libexec
 
-Privileged/background helpers. 20 files.
+Privileged/background helpers. 8 files.
 
 | File | Why it exists | Needed? |
 |---|---|---|
 | `bazzite-boot-remount` | Remount `/boot` read-write for updates then back to read-only (bootc/rpm-ostree boot partition handling) | ✅ |
-| `bazzite-dynamic-fixes` | Per-session GPU workarounds — e.g. sets `GSK_RENDERER=gl` on Intel i915/xe to avoid GTK4 glitches; removes it when not needed | ✅ (user service, enabled globally) |
+| `bazzite-dynamic-fixes` | Per-session GPU workarounds — sets `GSK_RENDERER=gl` on Intel i915/xe to avoid GTK4 glitches; removes it when not needed | ✅ (user service, enabled globally) |
 | `bazzite-fetch-image` | Prints `image-name:branch` + signed/unsigned marker — used in prompts/scripts | ⚠️ cosmetic |
-| `bazzite-hardware-setup` | Versioned one-shot hardware setup at boot/update: handheld quirks, Deck tweaks, fixes stale configs (incl. a Waydroid apparmor cleanup line) | ✅ (system service, enabled) |
-| `bazzite-iwd-migration` | Migrates WiFi backend away from iwd: re-enables `wpa_supplicant`, removes stale NetworkManager drop-ins | ✅ (oneshot) |
+| `bazzite-hardware-setup` | Versioned one-shot hardware setup (`HWS_VER=81`): applies the bluetooth/nomodeset/KVM kargs (reboot if changed), fixes over-long hostnames and missing `/etc/hostname` for distrobox; state in `/etc/bazzite` | ✅ (system service, enabled) |
 | `bazzite-powersave` | Sets the power profile over DBus (`power-saver`/`balanced`) — used by ujust/ppd integration | ✅ |
-| `bazzite-privileged-user-setup` | Root-side user setup: enable NTP, allow Tailscale operator; invoked via polkit from user-setup | ✅ |
+| `bazzite-privileged-user-setup` | Root-side user setup: enable NTP, allow Tailscale operator, add the user to the `libvirt` group; invoked via polkit from user-setup | ✅ |
 | `bazzite-snapper-config` | Snapper defaults (retention disabled; user opts in) — ujust wrappers | ✅ (snapper installed) |
 | `bazzite-user-setup` | Per-user first-login setup (versioned): config markers, Templates symlinks (vkBasalt/dxvk/MangoHud examples), triggers the privileged helper | ✅ (user service, enabled) |
-| `force-wol` | Forces Wake-on-LAN on wired NICs; service ships **disabled**, toggled via ujust | ⚠️ disabled by default |
-| `hwsupport/sysid` | Normalizes DMI product names (e.g. truncates ROG Ally revisions) — shared by hardware setup and old waydroid defaults | ✅ for hardware setup |
-| `ntfs-exfat-monitor-script` | Desktop notification nagging when game libraries are on NTFS/exFAT (unsupported for Proton) — links to docs | ⚠️ graphical session |
-| `topgrade/third-party-css-loader-update` | topgrade custom command: git-pull user Steam theme repos (Adwaita-for-Steam etc.) | ⚠️ |
-| `ublue-motd` | Renders the MOTD banner (image name, Greenboot health, random tip) via `glow` | ✅ |
-| `uupd-update` | Front-end for `ujust update`: starts/attaches to `uupd-manual.service`, passes through exit code | ✅ |
-| `waydroid-container-{start,stop,restart}`, `waydroid-fix-controllers` | Polkit-invoked privileged Waydroid container control + controller fix | ❌ waydroid absent |
 
 ## systemd, udev, sysctl and plumbing
 
@@ -122,19 +138,19 @@ Privileged/background helpers. 20 files.
 | File | Why it exists | Needed? |
 |---|---|---|
 | `usr/lib/systemd/system/bazzite-hardware-setup.service` | Runs the hardware setup oneshot; ordering vs rpm-ostree/tuned | ✅ |
-| `…/bazzite-iwd-migration.service` | Runs the WiFi migration before NetworkManager | ✅ |
-| `…/bazzite-libvirtd-setup.service` | One-shot: enables libvirtd once after first boot then self-disables (permissions fix) | ⚠️ virt users |
 | `…/beesd@.timer` | Daily timed beesd (dedup) run | ✅ |
 | `…/cockpit.service` | Gate unit `Requires=` the podman cockpit container; toggled by ujust | ✅ |
 | `…/dev-hugepages1G.mount` | Mounts 1G hugepages **when** `hugepagesz=1G` kernel arg is present (gaming/VM perf) | ✅ conditional |
-| `…/force-wol.service` | Wires `force-wol` on network-online; disabled by default | ⚠️ |
 | `…/fstrim.service.d/workaround-no-root-trim.conf` | fstrim workaround for immutable/atomic root (Fedora tracker #81) | ✅ |
-| `…/incus-workaround.service` | SELinux label workaround for incus binaries: copy → bind-mount → restorecon (Universal Blue discourse) | ✅ (conditions on incus) |
-| `…/kmod-sleep-workaround@.service` | Template to unload/reload a named module around sleep for devices with suspend bugs | ⚠️ opt-in template |
+| `…/kmod-sleep-workaround@.service` | Template to unload/reload a named module around sleep for devices with suspend bugs; needs `kmod` (`rmmod`/`modprobe`), pinned in `verify` | ⚠️ opt-in template |
 | `…/mcelog.service.d/override.conf` | Prevents mcelog running inside VMs (no MC errors there) | ✅ if mcelog present |
+
+### User units
+
+| File | Why it exists | Needed? |
+|---|---|---|
 | `usr/lib/systemd/user/bazzite-user-setup.service` | Runs user setup at login | ✅ |
 | `usr/lib/systemd/user/bazzite-dynamic-fixes.service` | Runs GPU workaround logic at login | ✅ |
-| `usr/lib/systemd/user/ntfs-nag.service` | Starts the NTFS/exFAT notification at graphical session | ⚠️ |
 | `usr/lib/systemd/user/steam-icons-cleanup.service` | One-shot each session: `ujust steam-icons remove` to prune dead Steam shortcuts (ublue-os/bazzite#3280) | ⚠️ |
 
 ### Sysctls
@@ -146,17 +162,13 @@ Privileged/background helpers. 20 files.
 | `usr/lib/sysctl.d/75-networking.conf` | BBR congestion control, MTU probing, IPv6 privacy addresses | ✅ |
 | `usr/lib/sysctl.d/80-inotify.conf` | Higher inotify watch limits — dev tools, launchers, game file watchers | ✅ |
 
-### udev, sysusers, tmpfiles, modprobe, dracut
+### udev, sysusers, tmpfiles, modules-load, dracut
 
 | File | Why it exists | Needed? |
 |---|---|---|
 | `usr/lib/udev/rules.d/60-schedulers.rules` | I/O scheduler policy: kyber for SSD/NVMe, bfq for SD/HDD | ✅ |
-| `usr/lib/udev/rules.d/90-dolphin-motion.rules` | `uaccess` tag for motion-sensor input devices | ❌ removed (device trim: no motion-sensor devices) |
 | `usr/lib/sysusers.d/plugdev.conf` | Creates the `plugdev` group (46) that some device-access udev rules reference | ✅ |
-| `usr/lib/tmpfiles.d/bazzite-libvirt.conf` | Persistent correct perms for `/var/log/libvirt` | ⚠️ virt |
-| `usr/lib/tmpfiles.d/incus-workaround.conf` | Runtime copies backing the incus bind-mount workaround | ✅ |
-| `usr/lib/modprobe.d/fw-charge-control.conf` | Framework charge-control probing | ❌ removed (device trim: not a Framework) |
-| `usr/lib/modprobe.d/new-lg4ff.conf` | Blacklisted stock `hid_logitech` so the `new-lg4ff` kmod could take over | ❌ removed (device trim: no wheel, kmod dropped) |
+| `usr/lib/tmpfiles.d/bazzite-libvirt.conf` | Recreates libvirt/swtpm runtime state under `/var` at boot: `libvirt` tree, `libvirt` log dir, and `swtpm-localca` owned by `tss` (packaged `/var` payload is stripped by `finalize`) | ✅ (virt default-on) |
 | `usr/lib/modules-load.d/wine-ntsync.conf` | Loads the `ntsync` module (Wine NT synchronization primitives) | ✅ |
 | `usr/lib/dracut/dracut.conf.d/80-vfio.conf` | Force-loads `vfio*` in initramfs (GPU passthrough setups) | ⚠️ harmless default |
 
@@ -170,27 +182,20 @@ Privileged/background helpers. 20 files.
 
 ## usr/share
 
-Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti.
+Desktop entries, containers, plymouth, polkit, ublue-os, wireplumber, yafti.
 
 | File | Why it exists | Needed? |
 |---|---|---|
-| `applications/bazzite-steam-bpm.desktop` | Menu entry launching Steam in Big Picture Mode (translated) | ⚠️ |
 | `applications/bbrew.desktop` | Menu entry opening the bbrew TUI in a terminal | ⚠️ |
-| `applications/waydroid-container-restart.desktop` | Menu entry: restart Waydroid container via pkexec | ❌ |
-| `applications/Waydroid/{capsule,hero,icon,logo,store-capsule}.png` | Steam-library artwork so Waydroid looks native in Steam | ❌ |
 | `containers/systemd/cockpit-container.container` | Podman Quadlet running the upstream `cockpit/ws` container (web admin UI) with host mounts | ✅ (cockpit pkgs installed) |
 | `plymouth/themes/spinner/watermark.png` | Brand watermark on the boot splash | ✅ cosmetic |
 | `polkit-1/actions/org.bazzite.privileged.user.setup.policy` | Defines the pkexec action for the privileged user-setup helper | ✅ |
-| `polkit-1/actions/org.bazzite.waydroid.policy` | pkexec actions for Waydroid container control | ❌ |
 | `polkit-1/rules.d/20-privileged-ruser.rules` | Lets `wheel` group run the setup helper without a prompt | ✅ |
-| `polkit-1/rules.d/30-waydroid.rules` | Same for Waydroid actions | ❌ |
-| `polkit-1/rules.d/90-corectrl.rules` | Passwordless CoreCtrl helper for `wheel` (fan control) | ❌ CoreCtrl isn't installed by this fork |
 | `wireplumber/wireplumber.conf.d/51-disable-suspension.conf` | Disables ALSA node auto-suspension — prevents audio pops/latency for gamers | ⚠️ needs session |
-| `firefox-config/01-bazzite-global.js` | Firefox defaults: hardware video decode on, ML/chat/reader features off (also reused by the Flatpak Firefox) | ⚠️ no RPM Firefox in image |
-| `ublue-os/motd/env` + `motd/template.md` | MOTD banner data (image/ref, Greenboot health, random tip) and its template | ✅ |
-| `ublue-os/topgrade.toml` | Main topgrade config: system (rpm-ostree) + brew + firmware + custom commands, assume-yes | ⚠️ |
+| `ublue-os/motd/template.md` + `motd/tips/{10-halcyon,20-tools}.md` | Halcyon MOTD banner layout (image/build, status, system lines) and rotating tips | ✅ |
+| `ublue-os/topgrade.toml` | Main topgrade config: system (rpm-ostree) + brew + firmware; includes `/etc/ublue-os/topgrade.toml`, assume-yes | ⚠️ |
 | `ublue-os/bbrew.png` | Icon for the bbrew launcher | ⚠️ |
-| `ublue-os/docs/serve` | Served the downloadable offline docs (`python -m http.server`) | ❌ removed (offline-docs feature dropped) |
+| `ublue-os/firefox-config/01-bazzite-global.js` | Firefox defaults: hardware video decode on, ML/chat/reader features off (also reused by the Flatpak Firefox) | ⚠️ no RPM Firefox in image |
 | `ublue-os/bazaar/blocklist.yaml` | Hides from Bazaar what's already provided/replaced (Steam, Lutris, editors; DE-specific apps per session) | ✅ |
 | `ublue-os/bazaar/content.yaml` | Curated Bazaar storefront (banner rows for gaming/music/office/streaming/utilities) | ✅ |
 | `ublue-os/bazaar/{gaming,music,office,streaming,utilities}.jxl` | Banner images used by `content.yaml` | ✅ |
@@ -201,7 +206,7 @@ Desktop entries, art, polkit, cockpit, bazaar, share/ublue-os, yafti.
 
 ## usr/share/ublue-os/just
 
-The 9 `ujust` source files preserve the same recipe names. Small related groups are combined; the
+The 8 `ujust` source files preserve the same recipe names. Small related groups are combined; the
 large upstream feature files remain separate for easier updates.
 
 | File | Purpose |
@@ -212,6 +217,5 @@ large upstream feature files remain separate for easier updates.
 | `82-bazzite-apps.just` | Install/manage GUI apps via layering |
 | `83-bazzite-audio.just` | Virtual PipeWire channels for OBS |
 | `87-bazzite-framegen.just` | LSFG-VK frame generation |
-| `89-bazzite-mesa-git.just` | Mesa Git builds |
-| `system-tools.just` | Beesd, Cockpit, virtualization, input-remapper, and Windows boot recipes |
+| `system-tools.just` | Beesd, Cockpit, virtualization, input-remapper |
 | `maintenance.just` | Picker, image verification, and updater-to-Steam recipes |

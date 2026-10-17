@@ -14,7 +14,7 @@ fedora_version=$(jq -r '."fedora-version"' "$image_info")
 bazzite_config_dir="${XDG_DATA_HOME:-$HOME/.local/share}/bazzite"
 mkdir -p "$bazzite_config_dir"
 
-setup_version=57
+setup_version=58
 version_file="$bazzite_config_dir/version"
 fedora_version_file="$bazzite_config_dir/fedora_version"
 image_name_file="$bazzite_config_dir/image_name"

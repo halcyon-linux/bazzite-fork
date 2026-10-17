@@ -1,11 +1,5 @@
 # vim: set ft=make :
 
-# Disable NTFS/exFAT monitor and notification service
-_disable-ntfs-service:
-    #!/usr/bin/bash
-    systemctl disable --now --user ntfs-nag.service
-    systemctl mask --now --user ntfs-nag.service
-
 alias toggle-ssh := ssh
 
 # Manage SSH availability on boot. Options: status | enable | disable
@@ -1316,3 +1310,8 @@ get-logs:
       echo "Logs Last Boot: $last_boot_logs"
     } | wl-copy
     echo -e "${lightgreen}${bold}Logs and system information have been uploaded, and the links have been copied to your clipboard.\nPlease provide them to Bazzite Support for further help.${normal}"
+
+# Toggle the login MOTD banner on or off
+[group("system")]
+toggle-user-motd:
+    @/usr/bin/ublue-motd toggle

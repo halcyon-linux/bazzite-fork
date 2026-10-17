@@ -31,7 +31,7 @@ ${bold}Examples:${normal}
 ${bold}For help${normal}: https://discord.bazzite.gg
 "
 
-#Utility functions, mostly copied from brh
+# Utility functions, mostly copied from bazzite-rollback-helper
 confirm() {
   local msg="$1"
   echo -n "$msg ${yellow}(Y/n)${normal} "

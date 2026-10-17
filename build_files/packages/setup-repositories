@@ -10,6 +10,7 @@ copr_repositories=(
     ublue-os/bazzite-multilib
     ublue-os/staging
     ublue-os/packages
+    aahsnr-work/python-packages
 )
 
 for copr in "${copr_repositories[@]}"; do

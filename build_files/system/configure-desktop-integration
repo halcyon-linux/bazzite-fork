@@ -14,16 +14,6 @@ if [[ -e /usr/lib64/libdrm.so.2 ]]; then
     cp --no-dereference --preserve=links /usr/lib64/libdrm.so.2 /usr/lib64/libdrm.so
 fi
 
-# Wrap Steam launchers and add a silent autostart entry for new users.
-if [[ -f /usr/share/applications/steam.desktop ]]; then
-    sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop
-    sed -i 's@Exec=steam steam://open/bigpicture@Exec=/usr/bin/bazzite-steam-bpm@g' /usr/share/applications/steam.desktop
-    mkdir -p /etc/skel/.config/autostart/
-    cp /usr/share/applications/steam.desktop /etc/skel/.config/autostart/steam.desktop
-    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam -silent %U@g' \
-        /etc/skel/.config/autostart/steam.desktop
-fi
-
 # Hide CLI utilities from graphical application menus.
 for app in nvtop btop yad-icon-browser; do
     if [[ -f "/usr/share/applications/${app}.desktop" ]]; then

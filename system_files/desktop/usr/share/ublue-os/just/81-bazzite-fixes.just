@@ -41,8 +41,6 @@ fix-reset-steam:
         rm -v "$STEAMPATH/$STEAMFILE"
       fi
     done
-    sleep 1
-    bazzite-steam --disable-firstrun &
     exit 0
 
 # Toggle Bluetooth headset profile mode. If enabled, mic will be disabled on the Bluetooth device preventing the switch to headset profile, which has poor audio quality. Disable to restore mic functionality.
@@ -107,98 +105,6 @@ toggle-bt-mic ACTION="":
       else
         echo "Failed to disable mitigation. Ensure you have sufficient permissions."
       fi
-    else
-      echo "No changes were made."
-    fi
-
-alias toggle-wol := wol
-
-# Manage wake-on-lan functionality. Options: status | enable | disable | force-enable
-wol ACTION="":
-    #!/usr/bin/bash
-    source /usr/lib/ujust/ujust.sh
-    CONFIG_FILE="/etc/udev/rules.d/81-wol.rules"
-    SERVICE_FILE="/etc/systemd/system/force-wol.service"
-    FORCE_WOL_LINK="/etc/systemd/system/multi-user.target.wants/force-wol.service"
-    get_status_token() {
-      if [[ -L "$FORCE_WOL_LINK" ]]; then
-        echo "force-enable"
-      elif [[ -f "$CONFIG_FILE" ]]; then
-        echo "enable"
-      else
-        echo "disable"
-      fi
-    }
-    get_current_status() {
-      case "$(get_status_token)" in
-        force-enable)
-          echo "Force-Enabled"
-          ;;
-        enable)
-          echo "Enabled"
-          ;;
-        *)
-          echo "Disabled"
-          ;;
-      esac
-    }
-    OPTION="{{ ACTION }}"
-    if [ "$OPTION" == "help" ]; then
-      echo "Usage: ujust wol <option>"
-      echo "  <option>: Specify the quick option to skip the prompt"
-      echo "  Use 'enable' to enable Wake-on-LAN"
-      echo "  Use 'disable' to disable Wake-on-LAN"
-      echo "  Use 'force-enable' to force-enable Wake-on-LAN (persists across reboots)"
-      exit 0
-    elif [ "$OPTION" == "status" ]; then
-      get_status_token
-      exit $?
-    fi
-    INTERFACE=$(ip link show | awk '/state UP/ {print $2}' | tr -d ':' | grep -E '^(en|eth)')
-    if [[ -z "$INTERFACE" ]]; then
-      echo -e "${bold}No active Ethernet interface found.${normal}"
-      echo "Please ensure your Ethernet connection is enabled or connected."
-      echo "Exiting without making any changes."
-      exit 0
-    fi
-    if [ -z "$OPTION" ]; then
-      echo "Wake-on-LAN is currently: ${bold}$(get_current_status)${normal}"
-      echo "Enable, Disable Wake-on-LAN, Force-Enable, or Exit without saving?"
-      echo "Note: Force-Enable will make WOL persist across reboots"
-      OPTION=$(ugum choose Enable Disable Force-Enable Exit)
-    fi
-    if [[ "${OPTION,,}" == "enable" ]]; then
-      echo "You chose to enable Wake-on-LAN."
-      echo "Requesting root privileges..."
-      sudo ethtool -s $INTERFACE wol g
-      if ! grep -q "$INTERFACE" "$CONFIG_FILE" 2>/dev/null; then
-        echo "Creating udev rule to make this setting persistent..."
-        echo "ACTION==\"add\", SUBSYSTEM==\"net\", NAME==\"$INTERFACE\", RUN+=\"/usr/bin/ethtool -s \$name wol g\"" | sudo tee "$CONFIG_FILE" > /dev/null
-      fi
-      echo "Wake-on-LAN has been ${green}${bold}enabled${normal}."
-    elif [[ "${OPTION,,}" == "disable" ]]; then
-      echo "You chose to disable Wake-on-LAN."
-      echo "Requesting root privileges..."
-      sudo ethtool -s $INTERFACE wol d
-      if [[ -f "$CONFIG_FILE" ]]; then
-        echo "Removing udev rule to disable persistence..."
-        sudo rm -f "$CONFIG_FILE"
-      fi
-      if systemctl is-enabled force-wol.service &>/dev/null; then
-        sudo systemctl disable force-wol.service
-        echo "Force-WOL service has been disabled."
-      fi
-      echo "Wake-on-LAN has been ${red}${bold}disabled${normal}."
-    elif [[ "${OPTION,,}" == "force-enable" ]]; then
-      echo "You chose to force-enable wake on LAN."
-      echo "Requesting root privileges..."
-      if [ -f "/etc/systemd/system/force-wol.service" ]; then
-        echo "Removing deprecated service file"
-        sudo rm "/etc/systemd/system/force-wol.service"
-      fi
-      sudo systemctl daemon-reload
-      sudo systemctl enable --now force-wol.service
-      echo "Wake on LAN force-enabled: ${green}${bold}force-wol.service${normal}"
     else
       echo "No changes were made."
     fi
