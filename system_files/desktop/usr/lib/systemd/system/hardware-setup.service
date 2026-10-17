@@ -6,7 +6,7 @@ Before=systemd-user-sessions.service jupiter-biosupdate.service jupiter-controll
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/halcyon-hardware-setup
+ExecStart=/usr/bin/hardware-setup
 
 [Install]
 WantedBy=multi-user.target

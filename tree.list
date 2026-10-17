@@ -102,14 +102,14 @@
 │   │       │   │   │   ├── dev-hugepages1G.mount
 │   │       │   │   │   ├── fstrim.service.d
 │   │       │   │   │   │   └── workaround-no-root-trim.conf
-│   │       │   │   │   ├── halcyon-hardware-setup.service
+│   │       │   │   │   ├── hardware-setup.service
 │   │       │   │   │   ├── kmod-sleep-workaround@.service
 │   │       │   │   │   └── mcelog.service.d
 │   │       │   │   │       └── override.conf
 │   │       │   │   └── user
-│   │       │   │       ├── halcyon-dynamic-fixes.service
-│   │       │   │       ├── halcyon-user-setup.service
-│   │       │   │       └── steam-icons-cleanup.service
+│   │       │   │       ├── dynamic-fixes.service
+│   │       │   │       ├── steam-icons-cleanup.service
+│   │       │   │       └── user-setup.service
 │   │       │   ├── sysusers.d
 │   │       │   │   └── plugdev.conf
 │   │       │   ├── tmpfiles.d
@@ -185,8 +185,8 @@
 │   │       │   │   └── nvidia-power.conf
 │   │       │   ├── systemd
 │   │       │   │   └── system
-│   │       │   │       ├── halcyon-nvidia-flatpak-runtime-sync.service
-│   │       │   │       └── halcyon-nvidia-flatpak-runtime-verify.service
+│   │       │   │       ├── nvidia-flatpak-runtime-sync.service
+│   │       │   │       └── nvidia-flatpak-runtime-verify.service
 │   │       │   └── udev
 │   │       │       └── rules.d
 │   │       │           └── 80-nvidia-pm.rules

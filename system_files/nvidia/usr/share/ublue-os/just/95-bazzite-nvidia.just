@@ -5,7 +5,7 @@ update-nvidia-runtime ACTION="":
     source /usr/lib/ujust/ujust.sh
     get_status_token() {
         local service_state
-        service_state="$(/usr/bin/halcyon-nvidia-flatpak-runtime-sync check)"
+        service_state="$(/usr/bin/nvidia-flatpak-runtime-sync check)"
         if ! service_state; then
             echo "upgraded"
         else
@@ -23,7 +23,7 @@ update-nvidia-runtime ACTION="":
         get_status_token
         exit $?
     elif [[ "$OPTION" == "upgrade" ]]; then
-        /usr/bin/halcyon-nvidia-flatpak-runtime-sync sync
+        /usr/bin/nvidia-flatpak-runtime-sync sync
     elif [[ -z "$OPTION" ]]; then
         echo "${bold}No option specified.${normal}"
         exit 0

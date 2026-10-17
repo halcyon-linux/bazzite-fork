@@ -6,7 +6,7 @@ system_services=(
     brew-setup.service
     input-remapper.service
     uupd.timer
-    halcyon-hardware-setup.service
+    hardware-setup.service
     dev-hugepages1G.mount
     libvirtd.service
     ds-inhibit.service
@@ -17,10 +17,10 @@ system_services=(
 )
 
 global_services=(
-    halcyon-user-setup.service
+    user-setup.service
     podman.socket
     systemd-tmpfiles-setup.service
-    halcyon-dynamic-fixes.service
+    dynamic-fixes.service
     dmemcg-booster-user.service
 )
 

@@ -118,13 +118,13 @@ reisub ACTION="":
 [group("system")]
 regenerate-grub:
     #!/usr/bin/bash
-    BOOT_REMOUNT_STATE="$(/usr/bin/halcyon-boot-remount rw)" || exit $?
+    BOOT_REMOUNT_STATE="$(/usr/bin/boot-remount rw)" || exit $?
     if [ -d /sys/firmware/efi ]; then
       sudo grub2-mkconfig -o /etc/grub2-efi.cfg
     else
       sudo grub2-mkconfig -o /etc/grub2.cfg
     fi
-    /usr/bin/halcyon-boot-remount ro "$BOOT_REMOUNT_STATE"
+    /usr/bin/boot-remount ro "$BOOT_REMOUNT_STATE"
 
 # Set GRUB menu timeout and regenerate config. Options: no-timeout | instant | 1-second | 3-seconds | 5-seconds | 10-seconds | custom
 [group("system")]
@@ -174,7 +174,7 @@ grub-timeout ACTION="":
         sudo rm -f "$GRUB_FILE" || true
       fi
 
-      /usr/bin/halcyon-boot-remount ro "$BOOT_REMOUNT_STATE" || true
+      /usr/bin/boot-remount ro "$BOOT_REMOUNT_STATE" || true
 
       exit "$EXIT_CODE"
     }
@@ -271,7 +271,7 @@ grub-timeout ACTION="":
       sudo cp -a "$GRUB_FILE" "$GRUB_FILE_BACKUP"
     fi
 
-    BOOT_REMOUNT_STATE="$(/usr/bin/halcyon-boot-remount rw)"
+    BOOT_REMOUNT_STATE="$(/usr/bin/boot-remount rw)"
 
     echo "Writing temporary GRUB_TIMEOUT=$TIMEOUT to $GRUB_FILE..."
     if sudo test -e "$GRUB_FILE" && sudo grep -q '^GRUB_TIMEOUT=' "$GRUB_FILE"; then
@@ -369,7 +369,7 @@ configure-grub ACTION="":
     apply_setting() {
       local selected_option="$1"
       local boot_remount_state
-      boot_remount_state="$(/usr/bin/halcyon-boot-remount rw)" || exit $?
+      boot_remount_state="$(/usr/bin/boot-remount rw)" || exit $?
       # Support the interactive strings as well as short commands
       case "$(echo "$selected_option" | tr '[:upper:]' '[:lower:]')" in
         *"(menu_auto_hide=2)"*|hide)
@@ -394,7 +394,7 @@ configure-grub ACTION="":
           echo "${bold}${red}Invalid option selected. No changes were made.${normal}"
           ;;
       esac
-      /usr/bin/halcyon-boot-remount ro "$boot_remount_state"
+      /usr/bin/boot-remount ro "$boot_remount_state"
     }
     OPTION="{{ ACTION }}"   # from “configure-grub ACTION=...”
     if [ "$OPTION" == "help" ]; then
@@ -839,11 +839,11 @@ configure-snapshots ACTION="":
       OPTION=$(Choose "Enable Snapper" "Disable Snapper" "Wipe Snapper config and automatic snapshots")
     fi
     if [[ "${OPTION,,}" =~ ^enable ]]; then
-      /usr/bin/halcyon-snapper-config enable
+      /usr/bin/snapper-config enable
     elif [[ "${OPTION,,}" =~ ^disable ]]; then
-      /usr/bin/halcyon-snapper-config disable
+      /usr/bin/snapper-config disable
     elif [[ "${OPTION,,}" =~ ^wipe ]]; then
-      /usr/bin/halcyon-snapper-config wipe
+      /usr/bin/snapper-config wipe
     fi
 
 # Configure Windows/Mac-like US international keyboard layout dead keys behavior

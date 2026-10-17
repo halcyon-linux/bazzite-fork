@@ -72,26 +72,26 @@ grouping guide, not as generated build metadata.
 11. **`bazzite-libvirtd-setup.service`** — one-shot that enabled libvirtd after the next reboot,
     needed only for the old `ujust`-driven `rpm-ostree install` flow. Removed now that virtualization
     ships enabled by default; the recipe no longer references it.
-12. **Shell helpers → `halcyon-*` RPMs** — the eight `usr/libexec/bazzite-*` helpers moved to Python
-    packages in the halcyon `python-packages` Copr (`halcyon-boot-remount`, `halcyon-dynamic-fixes`,
-    `halcyon-fetch-image`, `halcyon-hardware-setup`, `halcyon-powersave`, `halcyon-user-setup` +
-    `halcyon-privileged-user-setup`, `halcyon-snapper-config`); the NVIDIA runtime pair and DLSS
-    wrappers followed (`halcyon-nvidia-flatpak-runtime`, `halcyon-dlss-swapper`). Units were renamed
-    `bazzite-*`/`ublue-nvidia-*` → `halcyon-*`; recipe names and runtime state paths are unchanged.
+12. **Shell helpers → RPMs** — the eight `usr/libexec/bazzite-*` helpers moved to Python packages
+    in the halcyon `python-packages` Copr (`boot-remount`, `dynamic-fixes`, `fetch-image`,
+    `hardware-setup`, `powersave`, `user-setup` + `privileged-user-setup`, `snapper-config`); the
+    NVIDIA runtime pair and DLSS wrappers followed (`nvidia-flatpak-runtime`, `dlss-swapper`).
+    Units were renamed `bazzite-*`/`ublue-nvidia-*` → their vendor-neutral names; recipe names and
+    runtime state paths are unchanged.
 
-`halcyon-hardware-setup` (formerly `bazzite-hardware-setup`) was rewritten on 2026-10-18: dropped the
-zram `vm.min_free_kbytes` tweak and the inert Waydroid apparmor cleanup; kept the karg handling
+`hardware-setup` (formerly `bazzite-hardware-setup`) was rewritten on 2026-10-18: dropped the zram
+`vm.min_free_kbytes` tweak and the inert Waydroid apparmor cleanup; kept the karg handling
 (bluetooth/nomodeset, reboot-if-changed) and the distrobox hostname/`/etc/hostname` fix. The state
-gate is `HWS_VER=81` (80 for the rewrite, 81 for the KVM kargs), in the `halcyon-hardware-setup`
-package (python-packages).
+gate is `HWS_VER=81` (80 for the rewrite, 81 for the KVM kargs), in the `hardware-setup` package
+(python-packages).
 
 **Virtualization is enabled by default (2026-10-18):** the image bakes in `virt-manager`,
 `virt-install`, `libvirt-daemon`, `libvirt-daemon-kvm`, `libvirt-daemon-config-{network,nwfilter}`,
 and `virtiofsd`; `libvirtd.service` is enabled at build time by `configure-system-services`;
-`halcyon-hardware-setup` applies the `kvm.ignore_msrs=1`/`kvm.report_ignored_msrs=0` kargs;
+`hardware-setup` applies the `kvm.ignore_msrs=1`/`kvm.report_ignored_msrs=0` kargs;
 `bazzite-libvirt.conf` recreates the libvirt/swtpm `/var` directories at boot (the packaged payload
-is stripped by `finalize`); and `halcyon-privileged-user-setup` adds the login user to the `libvirt`
-group. `ujust setup-virtualization` remains as the repair/disable path.
+is stripped by `finalize`); and `privileged-user-setup` adds the login user to the `libvirt` group.
+`ujust setup-virtualization` remains as the repair/disable path.
 
 Remaining Waydroid mentions, left in place deliberately (all guarded or inert): the
 `waydroid-container.service` disable no-op in `build_files/nvidia/finalize-nvidia`, the commented
@@ -119,8 +119,8 @@ System-wide defaults. 10 files.
 ## usr/bin
 
 Intentionally empty: every in-tree command is RPM-provided (`brh`, `bruh`, `crh`, `gameclass`,
-`bbrew-helper`, `ublue-motd`, `uupd-update`, and the `halcyon-*` helpers). Keep new PATH commands
-out of this tree.
+`bbrew-helper`, `ublue-motd`, `uupd-update`, and the helper RPMs). Keep new PATH commands out of
+this tree.
 
 ## systemd, udev, sysctl and plumbing
 
@@ -128,7 +128,7 @@ out of this tree.
 
 | File | Why it exists | Needed? |
 |---|---|---|
-| `usr/lib/systemd/system/halcyon-hardware-setup.service` | Runs the `halcyon-hardware-setup` oneshot (RPM); ordering vs rpm-ostree/tuned | ✅ |
+| `usr/lib/systemd/system/hardware-setup.service` | Runs the `hardware-setup` oneshot (RPM); ordering vs rpm-ostree/tuned | ✅ |
 | `…/beesd@.timer` | Daily timed beesd (dedup) run | ✅ |
 | `…/cockpit.service` | Gate unit `Requires=` the podman cockpit container; toggled by ujust | ✅ |
 | `…/dev-hugepages1G.mount` | Mounts 1G hugepages **when** `hugepagesz=1G` kernel arg is present (gaming/VM perf) | ✅ conditional |
@@ -140,8 +140,8 @@ out of this tree.
 
 | File | Why it exists | Needed? |
 |---|---|---|
-| `usr/lib/systemd/user/halcyon-user-setup.service` | Runs the `halcyon-user-setup` first-login setup (RPM) | ✅ |
-| `usr/lib/systemd/user/halcyon-dynamic-fixes.service` | Runs the `halcyon-dynamic-fixes` GPU workaround logic (RPM) at login | ✅ |
+| `usr/lib/systemd/user/user-setup.service` | Runs the `user-setup` first-login setup (RPM) | ✅ |
+| `usr/lib/systemd/user/dynamic-fixes.service` | Runs the `dynamic-fixes` GPU workaround logic (RPM) at login | ✅ |
 | `usr/lib/systemd/user/steam-icons-cleanup.service` | One-shot each session: `ujust steam-icons remove` to prune dead Steam shortcuts (ublue-os/bazzite#3280) | ⚠️ |
 
 ### Sysctls
